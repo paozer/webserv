@@ -15,7 +15,7 @@ void Server::start (void)
 int Server::main_cycle(void)
 {
     int nbytes;
-    char buffer[256];
+    char buffer[9000];
 
     struct sockaddr_in cli_addr;
     unsigned int cli_len = sizeof(cli_addr);
@@ -55,7 +55,7 @@ int Server::main_cycle(void)
                         FD_CLR(i, &master_set);
                     } else {
                         std::cout << "server: received:\n" << buffer << "\n";
-                        bzero(buffer, 256);
+                        bzero(buffer, 9000);
 
                         FD_ZERO(&tmp_set);
                         FD_SET(i, &tmp_set);
@@ -64,11 +64,27 @@ int Server::main_cycle(void)
                             std::cout << "server: cannot send data to client\n";
                             continue ;
                         }
-                        std::string s = "this is some random data\n";
-                        //write(i, s.c_str(), s.length());
+
+                        std::stringstream ss;
+                        ss << "HTTP/1.1 200 OK\n";
+                        ss << "Server: webserv\n";
+                        ss << "Content-Type: text/html\n";
+                        ss << "Connection: close\n";
+                        ss << "\n\n<html>\n";
+                        ss << "<body>\n";
+                        ss << "<h1>Hello, World!</h1>\n";
+                        ss << "<h1>Your ip is ";
+                        ss <<  inet_ntoa(cli_addr.sin_addr);
+                        ss << "</h1>\n";
+                        ss << "</body>\n";
+                        ss << "</html>\n";
+                        std::string s = ss.str();
                     	send(i, s.c_str(), s.length(), 0);
-		    }
+
+                        FD_CLR(i, &master_set);
+                        close(i);
                 }
+            }
             }
         }
     }
