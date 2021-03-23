@@ -30,7 +30,7 @@ int Server::main_cycle(void)
     FD_SET(_socket.get_fd(), &master_set);
 
     while (true) {
-        FD_COPY(&master_set, &tmp_set);
+        tmp_set = master_set;
         select(max_fd + 1, &tmp_set, NULL, NULL, NULL);
 
         for (int i = 0; i <= max_fd; ++i) {
@@ -65,8 +65,9 @@ int Server::main_cycle(void)
                             continue ;
                         }
                         std::string s = "this is some random data\n";
-                        write(i, s.c_str(), s.length());
-                    }
+                        //write(i, s.c_str(), s.length());
+                    	send(i, s.c_str(), s.length(), 0);
+		    }
                 }
             }
         }

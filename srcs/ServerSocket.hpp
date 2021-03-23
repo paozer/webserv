@@ -6,6 +6,11 @@
 #include <unistd.h> // close
 #include <strings.h> // bzero
 
+#include <stdio.h> // perror
+#include <errno.h> //
+
+#include <stdlib.h> // exit
+
 #include <string> // std::string
 
 namespace Webserv {
