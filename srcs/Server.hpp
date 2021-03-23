@@ -1,3 +1,7 @@
+#pragma once
+
+#include "ServerSocket.hpp"
+
 #include <sys/select.h>
 #include <netinet/in.h>
 #include <unistd.h> // close, unlink

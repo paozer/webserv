@@ -2,7 +2,8 @@
 
 int main(int ac, char *av[], char *ev[])
 {
-    Server server;
+    Webserv::Server server;
+
     server.start();
     return 0;
 }

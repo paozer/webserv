@@ -6,13 +6,16 @@
 #include <unistd.h> // close
 #include <strings.h> // bzero
 
+#include <string> // std::string
+
 namespace Webserv {
 
 class ServerSocket {
     public:
         ServerSocket(const std::string& ip_address, int port);
-        int get_socket(void);
-        void set_socket(int socket_fd)
+
+        int get_fd(void);
+        void set_fd(int socket_fd);
 
     private:
         int _socket_fd;

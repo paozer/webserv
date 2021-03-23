@@ -41,12 +41,12 @@ ServerSocket::ServerSocket(const std::string& ip_address, int port)
     }
 }
 
-int ServerSocket::get_socket(void)
+int ServerSocket::get_fd(void)
 {
     return _socket_fd;
 }
 
-void ServerSocket::set_socket(int socket_fd)
+void ServerSocket::set_fd(int socket_fd)
 {
     _socket_fd = socket_fd;
 }

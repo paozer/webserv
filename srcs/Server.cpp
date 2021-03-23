@@ -3,7 +3,7 @@
 namespace Webserv {
 
 Server::Server(void)
-    : _socket(ServerSocket("127.0.0.1", 8080)
+    : _socket(ServerSocket("127.0.0.1", 8080))
 {
 }
 
@@ -21,13 +21,13 @@ int Server::main_cycle(void)
     unsigned int cli_len = sizeof(cli_addr);
     int cli_sock;
 
-    int max_fd = m_server_sock;
+    int max_fd = _socket.get_fd();
     fd_set master_set;
     fd_set tmp_set;
     FD_ZERO(&master_set);
     FD_ZERO(&tmp_set);
 
-    FD_SET(m_server_sock, &master_set);
+    FD_SET(_socket.get_fd(), &master_set);
 
     while (true) {
         FD_COPY(&master_set, &tmp_set);
@@ -35,8 +35,8 @@ int Server::main_cycle(void)
 
         for (int i = 0; i <= max_fd; ++i) {
             if (FD_ISSET(i, &tmp_set)) {
-                if (i == m_server_sock) { // new connection
-                    cli_sock = accept(m_server_sock, reinterpret_cast<struct sockaddr*>(&cli_addr), &cli_len);
+                if (i == _socket.get_fd()) { // new connection
+                    cli_sock = accept(_socket.get_fd(), reinterpret_cast<struct sockaddr*>(&cli_addr), &cli_len);
                     if (cli_sock == -1) {
                         std::cerr << "accept error\n";
                     } else {
