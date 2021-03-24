@@ -23,7 +23,6 @@ class Server
     private:
         ServerSocket _socket;
         int main_cycle(void);
-
 }; // class Server
 
 }; // namespace Webserv

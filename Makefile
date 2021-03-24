@@ -4,7 +4,8 @@ NAME		=	webserv
 
 SRCS 		=	srcs/main.cpp\
 				srcs/Server.cpp\
-				srcs/ServerSocket.cpp
+				srcs/ServerSocket.cpp\
+				srcs/webPages.cpp\
 
 INCS		= 	$(SRCS:.cpp:.hpp)
 
