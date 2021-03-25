@@ -5,8 +5,8 @@
 
 namespace Webserv {
 
-Server::Server(void)
-    : _socket(ServerSocket("127.0.0.1", 8080))
+Server::Server(Configuration::server const &config)
+    : _conf(config), _socket(ServerSocket(config._listen.second, config._listen.first))
 {
 }
 
@@ -31,6 +31,10 @@ int Server::main_cycle(void)
     FD_ZERO(&tmp_set);
 
     FD_SET(_socket.get_fd(), &master_set);
+
+    // socket(AF_INET, SOCK_STREAM, 0));
+    // (fcntl)(_socket.get_fd(), F_SETFL, O_NONBLOCK);
+
 
     while (true) {
         tmp_set = master_set;
@@ -76,8 +80,8 @@ int Server::main_cycle(void)
 			page.setPages("index.html");
 			send(i, page.getPages(), page.getLength(), 0);
 
-			FD_CLR(i, &master_set);
-                        close(i);
+			// FD_CLR(i, &master_set);
+            //             close(i);
                 }
             }
             }
