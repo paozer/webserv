@@ -3,6 +3,8 @@
 
 #include "webPages.hpp"
 
+#include "htmlPage.hpp"
+
 namespace Webserv {
 
 Server::Server(void)
@@ -68,13 +70,11 @@ int Server::main_cycle(void)
                             continue ;
                         }
 
-			/*	Send name specified by GET request to the object
-				(index.hmtl will be loaded if no file is specified
-				404.html will be loaded if the requested file can't be opened	*/
-			webPages	page;
-			page.setHeader();
-			page.setPages("index.html");
-			send(i, page.getPages(), page.getLength(), 0);
+			// Example of use for htmlPage class	
+			htmlPage response("index.html");
+			response.setHeader();
+			response.setData();
+			send(i, response.getData(), response.getDataSize(), 0);
 
 			FD_CLR(i, &master_set);
                         close(i);

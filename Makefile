@@ -6,6 +6,7 @@ SRCS 		=	srcs/main.cpp\
 				srcs/Server.cpp\
 				srcs/ServerSocket.cpp\
 				srcs/webPages.cpp\
+				srcs/htmlPage.cpp\
 
 INCS		= 	$(SRCS:.cpp:.hpp)
 
