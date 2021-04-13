@@ -6,6 +6,7 @@
 # include <map>
 # include <vector>
 # include <string>
+# include "Logger.hpp"
 
 namespace Webserv {
 
@@ -55,17 +56,15 @@ class Configuration
         Configuration(const Configuration &other);
         Configuration& operator=(const Configuration &other);
 
-        size_t                          get_nb_server() const;
+        inline size_t                   get_nb_server() const { return _servers.size(); }
         struct server*                  get_server(int id);
-        struct location*                get_locations(server serv, std::string name);
+        struct location*                get_locations(server &serv, std::string &name);
         void                            print_configuration();
 
     private:
         void                            complete_config(Configuration::server &serv);
         void                            load_config(std::list<std::string> &conf);
-        void                            erase_word(std::string &string);
         void                            complete_location(Configuration::location &loc);
-        std::string                     get_word(std::string &string);
         struct location                 load_location(std::list<std::string>::iterator &it);
     
         std::vector<struct server>      _servers;
@@ -83,5 +82,6 @@ class ConfException : public std::exception
     private:
         std::string _msg;
 };
+
 };
 #endif

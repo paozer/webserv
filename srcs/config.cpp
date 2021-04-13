@@ -6,14 +6,13 @@ Configuration::Configuration() {};
 
 Configuration::Configuration(std::string const &file)
 {
-    std::cout << "\nParse config files..." << std::endl;
     try {
-        lvector conf = read_file(file);
+        lvector conf = Parsing::read_file(file);
         for (lvector::iterator it = conf.begin(); it != conf.end(); ++it)
            load_config(*it);
         for (std::vector<Configuration::server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
             complete_config(*it);
-    } catch (Webserv::ParsingException const &e){
+    } catch (Webserv::Parsing::ParsingException const &e){
         std::cout << e.what() << std::endl;
         exit(0);
     } catch (Webserv::ConfException const &e){
@@ -32,28 +31,6 @@ Configuration& Configuration::operator=(const Configuration &other)
     if (this != &other)
         _servers = other._servers;
     return *this;
-}
-
-void    Configuration::erase_word(std::string &string)
-{
-    size_t  pos = string.find_first_of(" ");
-    string.erase(0, pos + 1);
-}
-
-std::string Configuration::get_word(std::string &string)
-{
-    std::string res;
-    size_t npos = std::string::npos;
-    size_t pos = string.find_first_of(" ");
-
-    if (pos != npos){
-        res = string.substr(0, pos);
-        erase_word(string);
-    } else {
-        res = string;
-        string.clear();
-    }
-    return res;
 }
 
 Configuration::location    Configuration::load_location(std::list<std::string>::iterator &it)
@@ -76,25 +53,25 @@ Configuration::location    Configuration::load_location(std::list<std::string>::
             if ((*it).compare(0, allowed_location[i].length(), allowed_location[i]) == 0)
                 ++count;
         if (!count)
-            throw ConfException("At: " + get_word(*it) + " " + get_word(*it), "\tUnkown expression.");
-        key = get_word(*it);
+            throw ConfException("At: " + Utils::get_word(*it) + " " + Utils::get_word(*it), "\tUnkown expression.");
+        key = Utils::get_word(*it);
         if (key == "autoindex")
-            new_loc._autoindex = get_word(*it) == "on" ? true : false;
+            new_loc._autoindex = Utils::get_word(*it) == "on" ? true : false;
         else if (key == "upload_enable")
-            new_loc._upload_enable = get_word(*it) == "on" ? true : false;
+            new_loc._upload_enable = Utils::get_word(*it) == "on" ? true : false;
         else if (key == "client_max_body_size")
-            new_loc._client_max_body_size = Utils::atoi(get_word(*it).c_str());
+            new_loc._client_max_body_size = Utils::atoi(Utils::get_word(*it).c_str());
         else if (key == "index")
-            new_loc._index = get_word(*it);
+            new_loc._index = Utils::get_word(*it);
         else if (key == "upload_path")
-            new_loc._upload_path = get_word(*it);
+            new_loc._upload_path = Utils::get_word(*it);
         else if (key == "cgi_extension")
-            new_loc._cgi_extension = get_word(*it);
+            new_loc._cgi_extension = Utils::get_word(*it);
         else if (key == "cgi_path")
-            new_loc._cgi_path.push_back(get_word(*it));
+            new_loc._cgi_path.push_back(Utils::get_word(*it));
         else if (key == "method")
             while (!(*it).empty())
-                new_loc._method.push_back(get_word(*it));
+                new_loc._method.push_back(Utils::get_word(*it));
         ++it;
     }
     return new_loc;
@@ -110,15 +87,15 @@ void    Configuration::load_config(std::list<std::string> &conf)
     {
         if (!(*it).compare("{") || !(*it).compare("}"))
             continue;
-        cmp = get_word(*it);
+        cmp = Utils::get_word(*it);
         if (cmp == "server_name")
-            new_serv._server_name = get_word(*it);
+            new_serv._server_name = Utils::get_word(*it);
         else if (cmp == "error_page")
-            new_serv._error_pages.insert(std::pair<int, std::string>(Utils::atoi(get_word(*it).c_str()), get_word(*it)));
+            new_serv._error_pages.insert(std::pair<int, std::string>(Utils::atoi(Utils::get_word(*it).c_str()), Utils::get_word(*it)));
         else if (cmp == "listen")
-            new_serv._listen = std::pair<int, std::string>(Utils::atoi(get_word(*it).c_str()), get_word(*it));
+            new_serv._listen = std::pair<int, std::string>(Utils::atoi(Utils::get_word(*it).c_str()), Utils::get_word(*it));
         else if (cmp == "root")
-            new_serv._root = get_word(*it);
+            new_serv._root = Utils::get_word(*it);
         else if (cmp == "location")
             new_serv._locations.push_back(load_location(it));
         else
@@ -167,11 +144,6 @@ void    Configuration::complete_config(Configuration::server &serv)
 **                             GETTERS                                **
 ***********************************************************************/
 
-size_t                     Configuration::get_nb_server() const
-{
-    return _servers.size();
-}
-
 Configuration::server*     Configuration::get_server(int id)
 {
     for (std::vector<struct server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
@@ -180,7 +152,7 @@ Configuration::server*     Configuration::get_server(int id)
     return NULL;
 }
 
-Configuration::location*   Configuration::get_locations(Configuration::server serv, std::string name)
+Configuration::location*   Configuration::get_locations(Configuration::server &serv, std::string &name)
 {
     for (std::vector<Configuration::location>::iterator it = serv._locations.begin(); it != serv._locations.end(); ++it)
         if ((*it)._name == name)
@@ -235,4 +207,4 @@ void                    Configuration::print_configuration()
         std::cout << std::endl;
     }
 }
-};
+}; 

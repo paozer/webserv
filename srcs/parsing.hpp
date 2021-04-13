@@ -12,12 +12,15 @@
 # include <sstream>
 
 # include "Utils.hpp"
+# include "Config.hpp"
 
 namespace Webserv {
-
+namespace Parsing {
 /*
 **  MODIFY allowed_methods[] and allowed_line_start[]
-**  to accept new configuration 
+**  to accept new configuration in block
+**  Modify allowed_line_out[]
+**  to accept new block declaration
 */
 
 static std::string allowed_methods[] = { 
@@ -28,11 +31,16 @@ static std::string allowed_methods[] = {
 
 static std::string allowed_line_start[] = {
     "{",                    "}",                    "#",
-    "server",               "listen",               "location", 
+    "\n",                   "listen",               "location", 
     "root",                 "index",                "client_max_body_size",
     "autoindex",            "cgi_extension",        "cgi_path", 
     "method",               "server_name",          "error_page",           
-    "upload_path",          "upload_enable",        ""
+    "upload_path",          "upload_enable",        "server",
+    ""
+};
+
+static std::string allowed_line_out[] = {
+    "server",               "log_enabled",          "#"
 };
 
 class ParsingException : public std::exception
@@ -47,11 +55,11 @@ class ParsingException : public std::exception
         std::string _msg;
 };
 
-std::vector<std::list<std::string> >    read_file(std::string file);
-
+std::vector<std::list<std::string> >    read_file(std::string const &file);
 void                        undo_whitespace(std::string &line);
 void                        count_and_replace_sometimes(std::string &line);
 
+};
 };
 
 #endif

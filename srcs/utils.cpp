@@ -53,13 +53,6 @@ void    undo_whitespace(std::string &line)
     }
 }
 
-size_t  get_len(const char *s)
-{
-    size_t i = 0;
-    while (s[i++]);
-    return i - 1;
-}
-
 int		atoi(const char *str)
 {
 	int		i;
@@ -89,6 +82,8 @@ std::string			itoa(int n)
 	int     		signe = 1;
 	std::string     res;
 
+    if (n == 0)
+        return "0";
     nb < 0 ? n = n * -1 : signe = 0;
 	lenght = lenght + signe;
 	while (nb /= 10)
@@ -96,9 +91,32 @@ std::string			itoa(int n)
 		res.insert(res.begin(),  n % 10 + 48);
 		n = n / 10;
 	}
+    res.insert(res.begin(),  n % 10 + 48);
 	if (signe != 0)
 		res.insert(res.begin(), '-');
 	return (res);
+}
+
+void    erase_word(std::string &string)
+{
+    size_t  pos = string.find_first_of(" ");
+    string.erase(0, pos + 1);
+}
+
+std::string get_word(std::string &string)
+{
+    std::string res;
+    size_t npos = std::string::npos;
+    size_t pos = string.find_first_of(" ");
+
+    if (pos != npos){
+        res = string.substr(0, pos);
+        erase_word(string);
+    } else {
+        res = string;
+        string.clear();
+    }
+    return res;
 }
 
 }; // namespace Utils

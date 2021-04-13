@@ -9,7 +9,7 @@ OBJS		= $(addprefix $(OBJS_PATH)/, $(SRCS:.cpp=.o))
 SRCS		= Config.cpp		Parsing.cpp\
 			  Utils.cpp			main.cpp\
 			  Server.cpp		ServerSocket.cpp\
-			  webPages.cpp
+			  webPages.cpp		Logger.cpp
 
 INCS		= 	$(SRCS:.cpp:.hpp)
 
