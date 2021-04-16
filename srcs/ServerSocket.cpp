@@ -16,23 +16,20 @@ ServerSocket::ServerSocket(const std::string& ip_address, int port)
         exit(-1);
     }
 
-	/*	Test to resolve "bind: already in use address	*/
 	int opt = 1;
-	if (setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR,
-                                                  &opt, sizeof(opt)))
-	{
+	if (setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
 		perror("setsockopt");
 		exit(errno);
 	}
 
     struct sockaddr_in sock_addr;
     sock_addr.sin_family = AF_INET;
-    sock_addr.sin_addr.s_addr = INADDR_ANY;
-    // sock_addr.sin_addr.s_addr = inet_addr(ip_address.c_str());
+    //sock_addr.sin_addr.s_addr = INADDR_ANY;
+    sock_addr.sin_addr.s_addr = inet_addr(ip_address.c_str());
     sock_addr.sin_port = htons(port);
     bzero(&sock_addr.sin_zero, 8);
 
-    if (sock_addr.sin_addr.s_addr == -1) {
+    if (sock_addr.sin_addr.s_addr == INADDR_NONE) {
         perror("inet_addr");
         close(_socket_fd);
         exit(-1);

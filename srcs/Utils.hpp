@@ -15,6 +15,7 @@ std::string		itoa(int n);
 void            undo_whitespace(std::string &line);
 std::string     get_word(std::string &string);
 void            erase_word(std::string &string);
+char            tolower (char c);
 
 }; // namespace Utils
 }; // namespace Webserv

@@ -1,6 +1,4 @@
 #include "Server.hpp"
-
-
 #include "webPages.hpp"
 
 namespace Webserv {
@@ -46,11 +44,6 @@ int Server::main_cycle(void)
     FD_ZERO(&tmp_set);
 
     FD_SET(_socket.get_fd(), &master_set);
-
-    // socket(AF_INET, SOCK_STREAM, 0));
-    // (fcntl)(_socket.get_fd(), F_SETFL, O_NONBLOCK);
-
-
     while (true) {
         tmp_set = master_set;
         select(max_fd + 1, &tmp_set, NULL, NULL, NULL);
@@ -93,76 +86,19 @@ int Server::main_cycle(void)
                             continue ;
                         }
 
-			/*	Send name specified by GET request to the object
-				(index.hmtl will be loaded if no file is specified
-				404.html will be loaded if the requested file can't be opened	*/
-			webPages	page;
-			page.setHeader();
-			page.setPages("index.html");
-			send(i, page.getPages(), page.getLength(), 0);
-
-			// FD_CLR(i, &master_set);
-            //             close(i);
+                        /*	Send name specified by GET request to the object
+                            (index.hmtl will be loaded if no file is specified
+                            404.html will be loaded if the requested file can't be opened	*/
+                        webPages	page;
+                        page.setHeader();
+                        page.setPages("index.html");
+                        send(i, page.getPages(), page.getLength(), 0);
+                    }
                 }
-            }
             }
         }
     }
     return 0;
 }
-
-/*#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-std::string	Server::get_html_pages(const std::string& name) {
-	std::string 	ret;
-	std::string 	tmp;
-	std::string 	t;
-	int		file = 0;
-
-	ret += "HTTP/1.1 200 OK\n";
-	ret += "Server: webserv\n";
-	ret += "Content-Type: text/html\n";
-	ret += "Connection: close\n\n";
-	t = "./www/" + name;
-	if ((file = open(t.c_str(), O_RDONLY)) < 0)
-		return ("NULL");
-	int	rd = 0;
-	char *buffer = (char*)malloc(50);
-	while ((rd = read(file, buffer, 49)) > 0) {
-		buffer[rd] = '\0';
-		ret += buffer;
-	}
-	free(buffer);
-	close(file);
-	return (ret);
-}*/
-
-/*std::string	Server::get_html_pages(const std::string& name) {
-	std::string ret;
-	std::string tmp;
-	std::string t;
-	std::ifstream input_files;
-
-	ret += "HTTP/1.1 200 OK\n";
-	ret += "Server: webserv\n";
-	ret += "Content-Type: text/html\n";
-	ret += "Connection: close\n\n";
-	t = "./www/" + name;
-	std::cout << t.c_str() << std::endl;
-	input_files.open(t.c_str());
-	if (input_files.is_open()) {
-		std::cout << "file is open" << std::endl;
-		while (getline(input_files, tmp)) {
-			ret += tmp;
-			ret += "\n";
-		}
-	}
-	else
-		ret = "404 not found";
-	input_files.close();
-	return (ret);
-}*/
 
 }; // namespace Webserv

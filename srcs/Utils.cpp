@@ -18,6 +18,8 @@ std::string join_strings_vector (const std::vector<std::string>& v, const std::s
 
 int atoi_base (const std::string& str, const std::string& base)
 {
+    if (str.empty())
+        return -1;
     int n = 0;
     size_t i = 0;
     for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
@@ -30,6 +32,7 @@ int atoi_base (const std::string& str, const std::string& base)
     }
     return n;
 }
+
 bool    is_whitespace(char c)
 {
     if ((c >= 9 && c <= 13) || c == 32)
@@ -43,7 +46,7 @@ void    undo_whitespace(std::string &line)
     {
         if (line[i] == '#' && line[i-1] && line[i-1] != '\n')
             line.insert(i, 1, '\n');
-        else if (is_whitespace(line[i]) && ((line[i+1] && is_whitespace(line[i + 1])) 
+        else if (is_whitespace(line[i]) && ((line[i+1] && is_whitespace(line[i + 1]))
                 || (line[i-1] && is_whitespace(line[i - 1]))) && line[i] != '\n')
             line.erase(i, 1);
         else if (line[i] == ';')
@@ -117,6 +120,13 @@ std::string get_word(std::string &string)
         string.clear();
     }
     return res;
+}
+
+char tolower (char c)
+{
+    if ('A' <= c && c <= 'Z')
+        return c + 32;
+    return c;
 }
 
 }; // namespace Utils

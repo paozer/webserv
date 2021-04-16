@@ -1,46 +1,62 @@
 ############## VARIABLES ##############
 
-NAME		=	webserv
+NAME	=	webserv
 
-SRCS_PATH	= srcs
-OBJS_PATH	= objs
+SRCS 	=	srcs/main.cpp\
+			srcs/Server.cpp\
+			srcs/ServerSocket.cpp\
+			srcs/Config.cpp\
+			srcs/Parsing.cpp\
+			srcs/Http/Request.cpp\
+			srcs/Http/Response.cpp\
+			srcs/Http/ChunkedBody.cpp\
+			srcs/Logger.cpp\
+			srcs/webPages.cpp\
+			srcs/Utils.cpp
 
-OBJS		= $(addprefix $(OBJS_PATH)/, $(SRCS:.cpp=.o))
-SRCS		= Config.cpp		Parsing.cpp\
-			  Utils.cpp			main.cpp\
-			  Server.cpp		ServerSocket.cpp\
-			  webPages.cpp		Logger.cpp
+UT_SRCS =	tests/main.cpp\
+			tests/ChunkedBody.cpp\
+			tests/Request.cpp\
+			tests/Response.cpp
 
-INCS		= 	$(SRCS:.cpp:.hpp)
+INCS	= $($(filter-out srcs/main.cpp, $(SRCS)):.cpp=.hpp)
+INCS	:= $(addsuffix srcs/Http/Http.hpp, $(INCS))
 
-CC			=	clang++
+CC		=	clang++
+CFLAGS	=	-fsanitize=address -g3 -Wall -Wextra -std=c++98
+UT_CFLAGS =	-fsanitize=address -g3 -Wall -Wextra -std=c++11
 
-FLAGS 		=	-Wall -Wextra -g3 -std=c++98
 
 ############## RECIPES ##############
 
-all:		$(NAME)
+# compile server
+$(NAME):		Makefile $(SRCS) $(INCS)
+				@echo "\033[33m > compiling...\033[0m"
+				@$(CC) $(CFLAGS) $(SRCS) -o $(NAME)
+				@echo "\033[32m > server compiled\033[0m"
+				@echo "\033[32m > execute ./$(NAME) to run server\033[0m"
 
-# compile program without unit tests
+# compile program with unit tests
+unit_tests: 	Makefile $(filter-out srcs/main.cpp, $(SRCS)) $(UT_SRCS) $(INCS)
+				@echo "\033[33m > compiling...\033[0m"
+				@$(CC) $(UT_CFLAGS) $(filter-out srcs/main.cpp, $(SRCS)) $(UT_SRCS) -o $(NAME)
+				@echo "\033[32m > unit tests compiled\033[0m"
+				@echo "\033[32m > execute ./$(NAME) to run all unit tests\033[0m"
 
-$(NAME):			$(OBJS)
-					$(CC) $(FLAGS) -o $(NAME) $(OBJS)
-					@echo "\033[32m > \033[1m$(NAME)\033[0;32m created !\033[0m"
-					@echo "execute ./$(NAME) <file.conf> to run webserver"
-
-$(OBJS_PATH)/%.o:	$(SRCS_PATH)/%.cpp
-					@$(shell mkdir -p $(OBJS_PATH))
-					$(CC) $(FLAGS) -c $< -o $@
-
+# compile program with test main (tests/main.cpp)
+no_unit_tests: 	Makefile $(filter-out srcs/main.cpp, $(SRCS)) $(UT_SRCS) $(INCS)
+				@echo "\033[33m > compiling...\033[0m"
+				@$(CC) $(UT_CFLAGS) -DNO_UNIT_TESTS $(filter-out srcs/main.cpp, $(SRCS)) tests/main.cpp -o $(NAME)
+				@echo "\033[32m > test main compiled\033[0m"
+				@echo "\033[32m > execute ./$(NAME) to run test main\033[0m"
 
 clean:
-					@rm -rf $(OBJS_PATH)
-					@echo "\033[31m > \033[1mobjs/*\033[0;31m delete.\033[0m"
+				@rm -rf $(NAME).o
+				@rm -rf $(NAME).dSYM
+				@echo "\033[31m > make clean done\033[0m"
 
-fclean:				clean
-					@rm -rf $(NAME)
-					@echo "\033[31m > \033[1m$(NAME)\033[0;31m delete.\033[0m"
+fclean:			clean
+				@rm -rf $(NAME)
+				@echo "\033[31m > make fclean done\033[0m"
 
-re:					fclean all
-
-.PHONY:				all fclean clean re
+re:				fclean $(NAME)
