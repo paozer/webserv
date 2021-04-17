@@ -6,7 +6,6 @@ namespace Http {
 class Response
 {
     public:
-        void clear (void);
         void build_raw_packet (void);
         inline const std::string& get_raw_packet (void) { return _raw_packet; }
 
@@ -20,8 +19,7 @@ class Response
         std::string _body;
         std::string _raw_packet;
 
-        static StatusCodeMap create_status_codes_map(void);
-        static StatusCodeMap status_codes;
+        void clear (void);
 
 }; // class Response
 
