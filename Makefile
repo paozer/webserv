@@ -6,6 +6,8 @@ SRCS 	=	srcs/main.cpp\
 			srcs/ServerSocket.cpp\
 			srcs/Config.cpp\
 			srcs/Parsing.cpp\
+			srcs/Methods.cpp\
+			srcs/Routing.cpp\
 			srcs/Http/Request.cpp\
 			srcs/Http/Response.cpp\
 			srcs/Http/ChunkedBody.cpp\
@@ -16,10 +18,11 @@ SRCS 	=	srcs/main.cpp\
 			srcs/Worker.cpp\
 			srcs/Connections_management.cpp
 
-UT_SRCS =	tests/main.cpp\
-			tests/ChunkedBody.cpp\
-			tests/Request.cpp\
-			tests/Response.cpp
+UT_SRCS =	tests/unit_tests/main.cpp\
+			tests/unit_tests/ChunkedBody.cpp\
+			tests/unit_tests/Request.cpp\
+			tests/unit_tests/Response.cpp\
+			tests/unit_tests/Methods.cpp
 
 INCS	= $($(filter-out srcs/main.cpp, $(SRCS)):.cpp=.hpp)
 INCS	:= $(addsuffix srcs/Http/Http.hpp, $(INCS))
@@ -48,7 +51,7 @@ unit_tests: 	Makefile $(filter-out srcs/main.cpp, $(SRCS)) $(UT_SRCS) $(INCS)
 # compile program with test main (tests/main.cpp)
 no_unit_tests: 	Makefile $(filter-out srcs/main.cpp, $(SRCS)) $(UT_SRCS) $(INCS)
 				@echo "\033[33m > compiling...\033[0m"
-				@$(CC) $(UT_CFLAGS) -DNO_UNIT_TESTS $(filter-out srcs/main.cpp, $(SRCS)) tests/main.cpp -o $(NAME)
+				@$(CC) $(UT_CFLAGS) -DNO_UNIT_TESTS $(filter-out srcs/main.cpp, $(SRCS)) tests/unit_tests/main.cpp -o $(NAME)
 				@echo "\033[32m > test main compiled\033[0m"
 				@echo "\033[32m > execute ./$(NAME) to run test main\033[0m"
 

@@ -82,10 +82,14 @@ int    ConnectionManagement::loop_worker()
 
 void    ConnectionManagement::response_management(int current_fd)
 {
-    // Check if the request is complete
-    // Parse the request
-    // Response's construction
-    _s_buffer = "thanks for your message, appreciate it.\n";
+    Http::Request request;
+    Http::Response response;
+
+    request.parse_raw_packet(_s_buffer);
+    response = Methods::method_handler(request, _config);
+    response.build_raw_packet();
+    _s_buffer = response.get_raw_packet();
+
     if (FD_ISSET(current_fd, &_tmp_write_fds))
         send(current_fd, _s_buffer.c_str(), _s_buffer.size(), 0);
 }

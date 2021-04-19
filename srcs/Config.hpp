@@ -69,9 +69,9 @@ class Configuration
     public:
         void                            parse(std::string const &file);
         inline size_t                   get_nb_server() const { return _servers.size(); }
-        struct server*                  get_server(int id);
-        struct location*                get_locations(server &serv, std::string &name);
         void                            print_configuration();
+        struct server*                  get_server(int id);
+        inline const std::vector<struct server>& get_servers (void) const { return _servers; }
 
     private:
         void                            set_default(std::list<std::string> &conf);
@@ -88,13 +88,14 @@ class Configuration
 class ConfException : public std::exception
 {
     public:
-        ConfException(std::string line, std::string msg)
-            : _msg("Err: " + line + " " + msg) {};
-        ~ConfException() throw() {};
-        const char *what() const throw()
-        { return _msg.c_str(); };
+        ConfException(const std::string& line, const std::string& msg)
+            : _msg("Err: " + line + " " + msg) { }
+        ~ConfException() throw() { }
+        const char *what() const throw() { return _msg.c_str(); }
+
     private:
         std::string _msg;
+
 };
 
 };

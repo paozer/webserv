@@ -59,6 +59,8 @@ Configuration::location    Configuration::load_location(std::list<std::string>::
             new_loc._cgi_extension = Utils::get_word(*it);
         } else if (key == "cgi_path") {
             new_loc._cgi_path.push_back(Utils::get_word(*it));
+        } else if (key == "root") {
+            new_loc._root = Utils::get_word(*it);
         } else if (key == "method") {
             while (!(*it).empty())
                 new_loc._method.push_back(Utils::get_word(*it));
@@ -76,6 +78,7 @@ void    Configuration::load_config(std::list<std::string> &conf)
     new_serv._id = _servers.size();
     for (std::list<std::string>::iterator it = ++conf.begin(); it != conf.end(); ++it)
     {
+
         if (!(*it).compare("{") || !(*it).compare("}"))
             continue;
         cmp = Utils::get_word(*it);
@@ -181,18 +184,10 @@ void    Configuration::set_default(std::list<std::string> &conf)
 
 Configuration::server*     Configuration::get_server(int id)
 {
-    for (std::vector<struct server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
-        if ((*it)._id == id)
-            return &(*it);
-    return NULL;
-}
-
-Configuration::location*   Configuration::get_locations(Configuration::server &serv, std::string &name)
-{
-    for (std::vector<Configuration::location>::iterator it = serv._locations.begin(); it != serv._locations.end(); ++it)
-        if ((*it)._name == name)
-            return &(*it);
-    return NULL;
+   for (std::vector<struct server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
+       if ((*it)._id == id)
+           return &(*it);
+   return NULL;
 }
 
 void                    Configuration::print_configuration()
@@ -226,8 +221,8 @@ void                    Configuration::print_configuration()
             std::cout << (*it)._name << std::endl;
             std::cout << sp << "root                  : " << (*it)._root << std::endl;
             std::cout << sp << "index                 : " << (*it)._index << std::endl;
-            std::cout << sp << "autonindex            : " << std::boolalpha << (*it)._autoindex << std::endl;
-            std::cout << sp << "upload_enable         : " << std::boolalpha << (*it)._upload_enable << std::endl;
+            std::cout << sp << "autoindex             : " << std::boolalpha << (*it)._autoindex << std::endl;
+            std::cout << sp << "upload_enabled        : " << std::boolalpha << (*it)._upload_enable << std::endl;
             std::cout << sp << "upload_path           : " << (*it)._upload_path << std::endl;
             std::cout << sp << "client_max_body_size  : " << (*it)._client_max_body_size << std::endl;
             std::cout << sp << "cgi_extension         : " << (*it)._cgi_extension << std::endl;

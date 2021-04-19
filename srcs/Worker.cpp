@@ -114,6 +114,7 @@ void    Worker::worker_routine()
     int connections_loose = 0;
     _id = _w_conf->id;
     _connections = ConnectionManagement(_id);
+    _connections._config = _configuration;
     _connections._max_fd = 0;
     FD_ZERO(&_connections._write_fds);
     FD_ZERO(&_connections._read_fds);

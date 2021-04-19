@@ -163,6 +163,7 @@ void    Server::main_loop_without_workers()
 {
     _cli_len = sizeof(_cli_addr);
     Log::out("Server", "start");
+    _connections._config = _configuration;
     while (!stop_server)
     {
         _connections._tv.tv_sec = 0;

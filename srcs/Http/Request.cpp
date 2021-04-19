@@ -109,9 +109,9 @@ void Request::evaluate_crlf_usage (const std::string& packet) const
 
 void Request::evaluate_request_line (void) const
 {
-    if (std::find(STANDARD_METHODS.begin(), STANDARD_METHODS.end(), get_http_method()) == STANDARD_METHODS.end())
+    if (std::find(STANDARD_METHODS.begin(), STANDARD_METHODS.end(), get_method()) == STANDARD_METHODS.end())
         throw InvalidPacketException("400", "invalid request method");
-    if (get_http_version().compare("HTTP/1.1") != 0)
+    if (get_http_version() != "HTTP/1.1")
         throw InvalidPacketException("505", "invalid http-version");
 }
 

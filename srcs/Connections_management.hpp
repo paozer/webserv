@@ -1,26 +1,28 @@
 #ifndef CONNECTIONS_MANAGEMENT
 # define CONNECTIONS_MANAGEMENT
 
+#include <string>
+#include <iostream>
+
 #include <sys/wait.h>
 #include <sys/select.h>
 #include <sys/types.h>
-
-#include <string>
-
 #include <stdio.h>
 #include <string.h>
-#include <iostream>
 #include <netinet/in.h>
 #include <unistd.h> // close, unlink
 #include <fcntl.h> // FD_MACROS
 #include <strings.h> // bzero
 #include <stdlib.h>
 #include <signal.h>
-#include <deque>
 
-# include "Logger.hpp"
-#include "Utils.hpp"
 #include "ServerSocket.hpp"
+#include "Config.hpp"
+#include "Logger.hpp"
+#include "Http/Request.hpp"
+#include "Http/Response.hpp"
+#include "Methods.hpp"
+#include "Utils.hpp"
 
 namespace Webserv {
 
@@ -48,7 +50,8 @@ class ConnectionManagement
         int             _nbytes;
 
         int             _nb_server;
+        Configuration   _config;
 };
 
-};
+}; // namespace Webserv
 #endif

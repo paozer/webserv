@@ -91,28 +91,26 @@ std::string			itoa(int n)
 	lenght = lenght + signe;
 	while (nb /= 10)
 	{
-		res.insert(res.begin(),  n % 10 + 48);
+		res.insert(res.begin(), n % 10 + 48);
 		n = n / 10;
 	}
-    res.insert(res.begin(),  n % 10 + 48);
+    res.insert(res.begin(), n % 10 + 48);
 	if (signe != 0)
 		res.insert(res.begin(), '-');
 	return (res);
 }
 
-void    erase_word(std::string &string)
+void    erase_word(std::string &str)
 {
-    size_t  pos = string.find_first_of(" ");
-    string.erase(0, pos + 1);
+    str.erase(0, str.find_first_of(" ") + 1);
 }
 
 std::string get_word(std::string &string)
 {
     std::string res;
-    size_t npos = std::string::npos;
     size_t pos = string.find_first_of(" ");
 
-    if (pos != npos){
+    if (pos != std::string::npos){
         res = string.substr(0, pos);
         erase_word(string);
     } else {

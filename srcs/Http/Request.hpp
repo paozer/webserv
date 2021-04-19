@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Http.hpp"
 #include "ChunkedBody.hpp"
 #include "../Logger.hpp"
@@ -11,7 +13,7 @@ class Request
         std::string parse_raw_packet (std::string packet, size_t max_client_body_size = 1048576);
         inline bool has_header (const std::string& name) const { return _headers.find(name) != _headers.end(); }
 
-        inline const std::string& get_http_method (void) const { return _request_line[0]; }
+        inline const std::string& get_method (void) const { return _request_line[0]; }
         inline const std::string& get_uri (void) const { return _request_line[1]; }
         inline const std::string& get_http_version (void) const { return _request_line[2]; }
         inline const HeaderMap& get_headers (void) const { return _headers; }
