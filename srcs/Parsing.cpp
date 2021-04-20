@@ -1,5 +1,6 @@
 #include "Parsing.hpp"
 #include "Utils.hpp"
+#include "Server_management.hpp"
 
 namespace Webserv {
 namespace Parsing {
@@ -22,7 +23,7 @@ void    check_blocks(std::string const &line)
 
 bool    compare_first_word(std::string const &base, std::string const &to_compare)
 {
-    if (base.length() > to_compare.length())
+   if (base.length() > to_compare.length())
         return false;
     if (to_compare.compare(0, base.length(), base))
         return false;
@@ -116,7 +117,7 @@ bool    valid_methods(std::string line)
     return true;
 }
 
-bool    valid_line(std::string &line)    
+bool    valid_line(std::string &line)
 {
     int     space = 0;
 
@@ -134,24 +135,34 @@ bool    valid_line(std::string &line)
     return space == 1;
 }
 
-void        push_a_line(std::list<std::string> &serv, std::string &file, int line)
+void        push_a_line(std::list<std::string> &serv, std::string &line, int nb_line)
 {
     size_t      pos;
 
-    if (!check_line(file))
-        throw ParsingException(line, "Unkown expression");
-    if ((pos = file.find_first_of('\n'))){
-        if (file[0] != '#')
-            serv.push_back(file.substr(0, pos));
-            file.erase(0, pos);
-        if (file[0] == '\n')
-            file.erase(0, 1);
-    } else if (file[0] != '#') {
-        serv.push_back(file);
-        file.clear();
+    if (!check_line(line))
+        throw ParsingException(nb_line, "Unkown expression");
+    if ((pos = line.find_first_of('\n'))){
+        if (line[0] != '#')
+            serv.push_back(line.substr(0, pos));
+            line.erase(0, pos);
+        if (line[0] == '\n')
+            line.erase(0, 1);
+    } else if (line[0] != '#') {
+        serv.push_back(line);
+        line.clear();
     }
     if (!valid_line(serv.back()))
-        throw ParsingException(line, "Bad arguments.");
+        throw ParsingException(nb_line, "Bad arguments.");
+}
+
+bool    parse_line_out_of_blocks(std::list<std::string> &conf, std::string &line, int nb_line)
+{
+    for (int i = 0; !allowed_line_out[i].empty(); ++i)
+        if (compare_first_word(allowed_line_out[i], line)) {
+            push_a_line(conf, line, nb_line);
+            return true;
+        }
+    return false;
 }
 
 std::vector<std::list<std::string> >    parse_file(std::string &file)
@@ -160,30 +171,29 @@ std::vector<std::list<std::string> >    parse_file(std::string &file)
     size_t                                  line = 1;
     bool                                    new_serv;
 
+    std::list<std::string> out_block;
+    res.push_back(out_block);
     while (!file.empty())
     {
-        if (file[0] == '#'){
+        if (file[0] == '#') {
             file.erase(0, file.find_first_of('\n') + 1);
             ++line;
-        } else if (compare_first_word("log_enabled", file)) {
-            if (compare_first_word("log_enabled on", file))
-                Log::prepare_file();
-            ++line;
-            file.erase(0, file.find_first_of('\n') + 1);
         } else if (compare_first_word("server", file)) {
             if (word_before_block(file) != 1)
                 throw ParsingException(line, "Bad Server Declaration");
             std::list<std::string>      serv;
             new_serv = true;
             for (int bc = 1; bc; ++line)
-            { 
+            {
                 bc += count_block(file, new_serv);
                 push_a_line(serv, file, line);
             }
             adjust_block(serv);
             res.push_back(serv);
+        } else if (parse_line_out_of_blocks(res[0], file, line)) {
+            ++line;
         } else {
-            throw ParsingException(line, "Expression out of block");
+            throw ParsingException(line, "Unkown expression out of block");
         }
     }
     return res;

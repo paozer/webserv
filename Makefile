@@ -3,7 +3,6 @@
 NAME	=	webserv
 
 SRCS 	=	srcs/main.cpp\
-			srcs/Server.cpp\
 			srcs/ServerSocket.cpp\
 			srcs/Config.cpp\
 			srcs/Parsing.cpp\
@@ -12,7 +11,10 @@ SRCS 	=	srcs/main.cpp\
 			srcs/Http/ChunkedBody.cpp\
 			srcs/Logger.cpp\
 			srcs/webPages.cpp\
-			srcs/Utils.cpp
+			srcs/Utils.cpp\
+			srcs/Server_management.cpp\
+			srcs/Worker.cpp\
+			srcs/Connections_management.cpp
 
 UT_SRCS =	tests/main.cpp\
 			tests/ChunkedBody.cpp\
@@ -57,6 +59,7 @@ clean:
 
 fclean:			clean
 				@rm -rf $(NAME)
+				@rm -rf log
 				@echo "\033[31m > make fclean done\033[0m"
 
 re:				fclean $(NAME)

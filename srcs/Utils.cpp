@@ -44,10 +44,10 @@ void    undo_whitespace(std::string &line)
 {
     for (size_t i = 0; i < line.size(); )
     {
-        if (line[i] == '#' && line[i-1] && line[i-1] != '\n')
+        if (i && line[i] == '#' && line[i-1] != '\n')
             line.insert(i, 1, '\n');
         else if (is_whitespace(line[i]) && ((line[i+1] && is_whitespace(line[i + 1]))
-                || (line[i-1] && is_whitespace(line[i - 1]))) && line[i] != '\n')
+                || (i && is_whitespace(line[i - 1]))) && line[i] != '\n')
             line.erase(i, 1);
         else if (line[i] == ';')
             line.erase(i, 1);

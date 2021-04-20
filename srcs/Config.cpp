@@ -2,14 +2,13 @@
 
 namespace Webserv {
 
-Configuration::Configuration() {};
-
-Configuration::Configuration(std::string const &file)
+void Configuration::parse(std::string const &file)
 {
     try {
         lvector conf = Parsing::read_file(file);
-        for (lvector::iterator it = conf.begin(); it != conf.end(); ++it)
-           load_config(*it);
+        set_default(conf[0]);
+        for (lvector::iterator it = ++(conf.begin()); it != conf.end(); ++it)
+            load_config(*it);
         for (std::vector<Configuration::server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
             complete_config(*it);
     } catch (Webserv::Parsing::ParsingException const &e){
@@ -19,28 +18,18 @@ Configuration::Configuration(std::string const &file)
         std::cout << e.what() << std::endl;
         exit(0);
     }
+    if (print_conf)
+        print_configuration();
 };
-
-Configuration::Configuration(const Configuration &other)
-{
-    *this = other;
-}
-
-Configuration& Configuration::operator=(const Configuration &other)
-{
-    if (this != &other)
-        _servers = other._servers;
-    return *this;
-}
 
 Configuration::location    Configuration::load_location(std::list<std::string>::iterator &it)
 {
     location        new_loc;
     std::string     key;
 
-    new_loc._name = *it;
+    new_loc._name = (*it).back() == ' ' ? (*it).substr(0, (*it).size() - 1) : *it;
     new_loc._client_max_body_size = 0;
-    new_loc._autoindex = false;
+    new_loc._set_auto_index = false;
     new_loc._upload_enable = false;
     ++it;
     if ((*it).compare("{"))
@@ -55,23 +44,25 @@ Configuration::location    Configuration::load_location(std::list<std::string>::
         if (!count)
             throw ConfException("At: " + Utils::get_word(*it) + " " + Utils::get_word(*it), "\tUnkown expression.");
         key = Utils::get_word(*it);
-        if (key == "autoindex")
+        if (key == "autoindex") {
             new_loc._autoindex = Utils::get_word(*it) == "on" ? true : false;
-        else if (key == "upload_enable")
+            new_loc._set_auto_index = true;
+        } else if (key == "upload_enable") {
             new_loc._upload_enable = Utils::get_word(*it) == "on" ? true : false;
-        else if (key == "client_max_body_size")
+        } else if (key == "client_max_body_size") {
             new_loc._client_max_body_size = Utils::atoi(Utils::get_word(*it).c_str());
-        else if (key == "index")
+        } else if (key == "index") {
             new_loc._index = Utils::get_word(*it);
-        else if (key == "upload_path")
+        } else if (key == "upload_path") {
             new_loc._upload_path = Utils::get_word(*it);
-        else if (key == "cgi_extension")
+        } else if (key == "cgi_extension") {
             new_loc._cgi_extension = Utils::get_word(*it);
-        else if (key == "cgi_path")
+        } else if (key == "cgi_path") {
             new_loc._cgi_path.push_back(Utils::get_word(*it));
-        else if (key == "method")
+        } else if (key == "method") {
             while (!(*it).empty())
                 new_loc._method.push_back(Utils::get_word(*it));
+        }
         ++it;
     }
     return new_loc;
@@ -82,25 +73,28 @@ void    Configuration::load_config(std::list<std::string> &conf)
     server          new_serv;
     std::string     cmp;
 
-    new_serv._id = _servers.size(); 
+    new_serv._id = _servers.size();
     for (std::list<std::string>::iterator it = ++conf.begin(); it != conf.end(); ++it)
     {
         if (!(*it).compare("{") || !(*it).compare("}"))
             continue;
         cmp = Utils::get_word(*it);
-        if (cmp == "server_name")
+        if (cmp == "server_name") {
             new_serv._server_name = Utils::get_word(*it);
-        else if (cmp == "error_page")
+        } else if (cmp == "error_page") {
             new_serv._error_pages.insert(std::pair<int, std::string>(Utils::atoi(Utils::get_word(*it).c_str()), Utils::get_word(*it)));
-        else if (cmp == "listen")
-            new_serv._listen = std::pair<int, std::string>(Utils::atoi(Utils::get_word(*it).c_str()), Utils::get_word(*it));
-        else if (cmp == "root")
+        } else if (cmp == "listen") {
+            new_serv._listen = std::make_pair(Utils::atoi(Utils::get_word(*it).c_str()), Utils::get_word(*it));
+            if (new_serv._listen.second == "localhost")
+                new_serv._listen.second = "127.0.0.1";
+        } else if (cmp == "root") {
             new_serv._root = Utils::get_word(*it);
-        else if (cmp == "location")
+        } else if (cmp == "location") {
             new_serv._locations.push_back(load_location(it));
-        else
+        } else
             throw ConfException(*it, " Expression out of block.");
     }
+
     _servers.push_back(new_serv);
 }
 
@@ -119,7 +113,9 @@ void    Configuration::complete_location(Configuration::location &loc)
     if (loc._upload_path.empty())
         loc._upload_path = "";
     if (loc._client_max_body_size == 0)
-        loc._client_max_body_size = 100000;
+        loc._client_max_body_size = def_conf.client_max_body_size;
+    if (!loc._set_auto_index)
+        loc._autoindex = def_conf.auto_idx;
 }
 
 void    Configuration::complete_config(Configuration::server &serv)
@@ -138,6 +134,45 @@ void    Configuration::complete_config(Configuration::server &serv)
         for (std::vector<Configuration::location>::iterator it = serv._locations.begin(); it != serv._locations.end(); ++it)
             complete_location(*it);
     }
+    for (std::map<int, std::string>::iterator it = def_conf.error_pages.begin(); it != def_conf.error_pages.end(); ++it)
+        if (serv._error_pages.find((*it).first) == serv._error_pages.end())
+            serv._error_pages.insert(*it);
+}
+
+void    Configuration::set_default(std::list<std::string> &conf)
+{
+    print_conf = false;
+    def_conf.auto_idx = false;
+    max_connections_workers = -1;
+    max_workers = -1;
+    std::string tmp;
+    for (std::list<std::string>::iterator it = conf.begin(); it != conf.end(); ++it)
+    {
+        tmp = Utils::get_word(*it);
+        if (tmp == "log_enabled") {
+            Log::prepare_file();
+        } else if (tmp == "nb_workers") {
+            max_workers = Utils::atoi(Utils::get_word(*it).c_str());
+            if (max_workers < 0 || max_workers > 513)
+                throw ConfException("max workers", "must be >= 0 and <= 512");
+        } else if (tmp == "workers_max_connectioms") {
+            max_connections_workers = Utils::atoi(Utils::get_word(*it).c_str());
+            if (max_connections_workers < 0 || max_connections_workers > 124)
+                throw ConfException("workers's connections", "must be > 0 and <= 1024");
+        } else if (tmp == "print_configuration") {
+            print_conf = Utils::get_word(*it) == "on" ? true : false;
+        } else if (tmp == "client_max_body_size") {
+            def_conf.client_max_body_size = Utils::atoi(Utils::get_word(*it).c_str());
+        } else if (tmp == "error_page") {
+            def_conf.error_pages.insert(std::pair<int, std::string>(Utils::atoi(Utils::get_word(*it).c_str()), Utils::get_word(*it)));
+        } else if (tmp == "autoindex") {
+            def_conf.auto_idx = Utils::get_word(*it) == "on" ? true : false;
+        }
+    }
+    if (max_workers == -1)
+        max_workers =  3;
+    if (max_connections_workers == -1)
+        max_connections_workers = 100;
 }
 
 /***********************************************************************
@@ -207,4 +242,4 @@ void                    Configuration::print_configuration()
         std::cout << std::endl;
     }
 }
-}; 
+};

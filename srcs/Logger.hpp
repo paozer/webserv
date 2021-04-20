@@ -13,7 +13,7 @@
 
 namespace Webserv {
 namespace Log {
-static int fd;
+static int fd = -1;
 
 static const int sec_in_a_month[] = {
 //    31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 days for each months
