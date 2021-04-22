@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HTTP_CHUNKED_BODY
+#define HTTP_CHUNKED_BODY
 
 #include "Http.hpp"
 
@@ -14,8 +15,8 @@ namespace Http {
 
 class ChunkedBody {
     public:
-        int decode (std::string chunked_body, size_t max_client_body_size = 1048576);
-        void clear (void);
+        State decode (std::string chunked_body, size_t max_client_body_size = 1048576);
+
         const std::string& get_body (void) const { return _body; }
         const std::string& get_trailer_part (void) const { return _trailer_part; }
 
@@ -27,3 +28,5 @@ class ChunkedBody {
 
 }; // namespace Http
 }; // namespace Webserv
+
+#endif

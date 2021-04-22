@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HTTP_HTTP_HPP
+#define HTTP_HTTP_HPP
 
 #include "../Utils/Utils.hpp"
 
@@ -15,10 +16,18 @@ namespace Webserv {
 namespace Http {
 
 // TODO
-// - handle crlf usage validity
-// - handle to long lines
+// - set line length limit
 // - handle header duplicates
-// - make header values strings not vector of string (?)
+
+enum State
+{
+    Complete,
+    Incomplete,
+    Error,
+    Requestline,
+    Headers,
+    Body
+};
 
 struct case_incensitive_strcmp;
 typedef std::string HeaderValues;
@@ -129,3 +138,5 @@ inline StatusCodeMap create_status_codes_map (void)
 
 }; // namespace Http
 }; // namespace Webserv
+
+#endif

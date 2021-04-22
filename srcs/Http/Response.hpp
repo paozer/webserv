@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HTTP_RESPONSE_HPP
+#define HTTP_RESPONSE_HPP
 
 #include "Http.hpp"
 
@@ -29,3 +30,5 @@ class Response
 
 }; // namespace Http
 }; // namespace Webserv
+
+#endif

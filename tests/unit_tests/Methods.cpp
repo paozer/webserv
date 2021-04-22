@@ -1,5 +1,5 @@
-#include "../../srcs/Methods.hpp"
-#include "../../srcs/Configuration.hpp"
+#include "../../srcs/Server/Methods.hpp"
+#include "../../srcs/Configuration/Configuration.hpp"
 
 #include "catch.hpp"
 

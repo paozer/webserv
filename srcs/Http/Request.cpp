@@ -4,109 +4,108 @@ namespace Webserv {
 namespace Http {
 
 /* PARSING */
-std::string Request::parse_raw_packet (std::string packet, size_t max_client_body_size)
+void Request::append (const std::string& packet)
 {
-    clear();
     try {
-        evaluate_crlf_usage(packet);
-        parse_request_line(packet);
-        parse_headers(packet);
-        parse_message_body(packet, max_client_body_size);
+        _packet.append(packet);
+        if (_request_line.size() != 3) {
+            _state = Requestline;
+            parse_request_line();
+            if (_request_line.size() != 3)
+                return ;
+            evaluate_request_line();
+            _state = Headers;
+        }
+        if (_state == Headers) {
+            parse_headers();
+            evaluate_headers();
+            if (_packet.find(CRLF) == 0) {
+                _state = Body;
+                _packet.length() == 2 ? _state = Complete : 0;
+            }
+        }
+        if (_state == Body) {
+            parse_message_body();
+        }
     } catch (const InvalidPacketException& e) {
         Log::out("Request Parsing", e.what());
-        return e.get_err_status_code();
+        _error_status_code = e.what();
+        _state = Error;
     } catch (const std::exception& e) {
         Log::out("Request Parsing", e.what());
-        return "500";
+        _error_status_code = "500";
+        _state = Error;
     }
-    return "200";
 }
 
-void Request::parse_request_line (std::string& raw_packet)
+void Request::parse_request_line (void)
 {
-    size_t i = raw_packet.find(CRLF);
-    if (i == std::string::npos || std::count(raw_packet.begin(), raw_packet.begin() + i, ' ') != 2)
+    size_t i = _packet.find(CRLF);
+    if (i == std::string::npos)
+        return ;
+    if (std::count(_packet.begin(), _packet.begin() + i, ' ') != 2)
         throw InvalidPacketException("400", "invalid space in request line");
-    i = raw_packet.find_first_of(SP, 0);
-    _request_line.push_back(raw_packet.substr(0, i));
+    i = _packet.find_first_of(SP, 0);
+    _request_line.push_back(_packet.substr(0, i));
     size_t j = i + 1;
-    i = raw_packet.find_first_of(SP, j);
-    _request_line.push_back(raw_packet.substr(j, i - j));
+    i = _packet.find_first_of(SP, j);
+    _request_line.push_back(_packet.substr(j, i - j));
     j = i + 1;
-    i = raw_packet.find(CRLF, j);
-    _request_line.push_back(raw_packet.substr(j, i - j));
-    raw_packet.erase(0, raw_packet.find(CRLF) + 2);
-    evaluate_request_line();
+    i = _packet.find(CRLF, j);
+    _request_line.push_back(_packet.substr(j, i - j));
+    _packet.erase(0, _packet.find(CRLF) + 2);
 }
 
-void Request::parse_headers (std::string& raw_packet)
+void Request::parse_headers (void)
 {
     size_t i = 0;
     size_t j = 0;
     size_t pos_crlf = 0;
     std::string field_name;
-    while ((pos_crlf = raw_packet.find(CRLF)) != 0) {
+    while ((pos_crlf = _packet.find(CRLF)) != 0) {
         if (pos_crlf == std::string::npos)
-            throw InvalidPacketException("400", "invalid crlf usage");
-        if (pos_crlf < (j = raw_packet.find(":")) || j == std::string::npos)
+            return ;
+        if (pos_crlf < (j = _packet.find(":")) || j == std::string::npos)
             throw InvalidPacketException("400", "expected new header but got something else");
-        field_name = raw_packet.substr(0, j);
-        i = raw_packet.find_first_not_of(OWS, j + 1);
-        j = raw_packet.find_last_not_of(OWS + CRLF, pos_crlf);
-        _headers[field_name] = raw_packet.substr(i, j - i + 1);
-        raw_packet.erase(0, pos_crlf + 2);
+        field_name = _packet.substr(0, j);
+        i = _packet.find_first_not_of(OWS, j + 1);
+        j = _packet.find_last_not_of(OWS + CRLF, pos_crlf);
+        _headers[field_name] = _packet.substr(i, j - i + 1);
+        _packet.erase(0, pos_crlf + 2);
     }
-    evaluate_headers();
 }
 
-void Request::parse_message_body (std::string& raw_packet, size_t max_client_body_size)
+void Request::parse_message_body (size_t max_client_body_size)
 {
-    raw_packet.erase(0, 2);
-    if (raw_packet.empty())
+    _packet.erase(0, 2);
+    if (_packet.empty())
         return ;
     if (has_header("Transfer-Encoding")) {
         if (get_header_values("Transfer-Encoding") != "chunked")
             throw InvalidPacketException("501", "unknown transfer encoding");
         ChunkedBody cb;
-        cb.decode(raw_packet, max_client_body_size);
+        if (cb.decode(_packet, max_client_body_size) == Complete)
+            _state = Complete;
         _body = cb.get_body();
-        std::string tmp = cb.get_trailer_part();
-        parse_headers(tmp);
+        _packet = cb.get_trailer_part();
+        parse_headers();
         _headers.erase("Content-Length");
+        evaluate_headers();
     } else if (has_header("Content-Length")) {
         int len = Utils::atoi_base(get_header_values("Content-Length"));
-        if (len == -1 || static_cast<size_t>(len) != raw_packet.length())
+        if (len == -1)
             throw InvalidPacketException("400", "invalid content-length");
         if (static_cast<size_t>(len) > max_client_body_size)
             throw InvalidPacketException("413", "client body size too large");
-        _body = raw_packet.substr(0, len);
+        _body = _packet.substr(0, len);
+        if (static_cast<size_t>(len) == _packet.length())
+            _state = Complete;
     } else {
         throw InvalidPacketException("411", "missing transfer-encoding or content-length");
     }
 }
 
 /* VALIDITY */
-void Request::evaluate_crlf_usage (const std::string& packet) const
-{
-    if (packet.find(CRLF + CRLF) == std::string::npos)
-        throw InvalidPacketException("400", "invalid crlf usage");
-    for (size_t i = 0; (i = packet.find_first_of(CRLF, i)) != std::string::npos;) {
-        if (packet[i] == '\n') {
-            if (i == 0 || packet[i - 1] != '\r')
-                throw InvalidPacketException("400", "invalid crlf usage");
-            else if (1 < i && packet[i - 2] == '\n')
-                return ;
-            ++i;
-        } else {
-            if (i == packet.length() || packet[i + 1] != '\n')
-                throw InvalidPacketException("400", "invalid crlf usage");
-            else if (i + 2 < packet.length() && packet[i + 2] == '\r')
-                return ;
-            i += 2;
-        }
-    }
-}
-
 void Request::evaluate_request_line (void) const
 {
     if (std::find(STANDARD_METHODS.begin(), STANDARD_METHODS.end(), get_method()) == STANDARD_METHODS.end())
@@ -125,14 +124,6 @@ void Request::evaluate_headers (void) const
                 throw InvalidPacketException("400", "invalid character in header field-name");
         }
     }
-}
-
-/* UTILITIES */
-void Request::clear (void)
-{
-    _request_line.clear();
-    _headers.clear();
-    _body.clear();
 }
 
 }; // namespace Http
