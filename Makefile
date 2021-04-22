@@ -3,20 +3,20 @@
 NAME	=	webserv
 
 SRCS 	=	srcs/main.cpp\
-			srcs/ServerSocket.cpp\
-			srcs/Config.cpp\
-			srcs/Parsing.cpp\
-			srcs/Methods.cpp\
-			srcs/Routing.cpp\
+			srcs/Server/ServerSocket.cpp\
+			srcs/Server/Methods.cpp\
+			srcs/Server/ServerManagement.cpp\
+			srcs/Server/Routing.cpp\
+			srcs/Server/ConnectionsManagement.cpp\
+			srcs/Server/Worker.cpp\
 			srcs/Http/Request.cpp\
 			srcs/Http/Response.cpp\
 			srcs/Http/ChunkedBody.cpp\
-			srcs/Logger.cpp\
-			srcs/webPages.cpp\
-			srcs/Utils.cpp\
-			srcs/Server_management.cpp\
-			srcs/Worker.cpp\
-			srcs/Connections_management.cpp
+			srcs/Configuration/Configuration.cpp\
+			srcs/Configuration/Parsing.cpp\
+			srcs/Utils/Utils.cpp\
+			srcs/Utils/Logger.cpp\
+			srcs/webPages.cpp
 
 UT_SRCS =	tests/unit_tests/main.cpp\
 			tests/unit_tests/ChunkedBody.cpp\

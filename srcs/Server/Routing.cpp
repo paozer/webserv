@@ -8,7 +8,7 @@ const Configuration::location* select_location (const Configuration::server* ser
     if (server == NULL)
         return NULL;
     std::vector<const struct Configuration::location*> selected_locations;
-    for (auto it = server->_locations.begin(); it != server->_locations.end(); ++it) {
+    for (std::vector<struct Configuration::location>::const_iterator it = server->_locations.begin(); it != server->_locations.end(); ++it) {
         if (uri.find(it->_name) == 0)
             selected_locations.push_back(&*it);
     }

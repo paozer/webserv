@@ -1,7 +1,10 @@
-#include "Config.hpp"
-#include "Http/Request.hpp"
-#include "Http/Response.hpp"
+#ifndef METHODS_HPP
+# define METHODS_HPP
+
 #include "Routing.hpp"
+#include "../Http/Request.hpp"
+#include "../Http/Response.hpp"
+#include "../Configuration/Configuration.hpp"
 
 #include <dirent.h>
 #include <sys/stat.h>
@@ -26,3 +29,5 @@ inline bool method_is_allowed (const Configuration::location* location, const st
 
 };
 };
+
+#endif

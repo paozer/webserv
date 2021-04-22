@@ -11,8 +11,8 @@
 # include <fcntl.h>
 # include <sstream>
 
-# include "Utils.hpp"
-# include "Config.hpp"
+# include "Configuration.hpp"
+# include "../Utils/Utils.hpp"
 
 namespace Webserv {
 namespace Parsing {

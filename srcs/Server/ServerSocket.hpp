@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SERVERSOCKET_HPP
+# define SERVERSOCKET_HPP
 
 #include <string>
 
@@ -22,3 +23,5 @@ class ServerSocket {
 }; // class ServerSocket
 
 }; // namespace Webserv
+
+# endif

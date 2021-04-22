@@ -1,15 +1,16 @@
 #ifndef LOGGER_HPP
 # define LOGGER_HPP
 
-# include <algorithm>
-# include <string>
-# include <sys/time.h>
-# include <sys/time.h>
-# include <sys/types.h>
-# include <fcntl.h>
-# include <unistd.h>
-# include <iostream>
-# include "Utils.hpp"
+#include <iostream>
+#include <algorithm>
+#include <string>
+#include <sys/time.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include "Utils.hpp"
 
 namespace Webserv {
 namespace Log {

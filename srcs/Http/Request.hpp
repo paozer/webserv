@@ -2,7 +2,7 @@
 
 #include "Http.hpp"
 #include "ChunkedBody.hpp"
-#include "../Logger.hpp"
+#include "../Utils/Logger.hpp"
 
 namespace Webserv {
 namespace Http {

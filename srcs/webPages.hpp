@@ -1,4 +1,5 @@
-#pragma once
+#ifndef WEBPAGES
+# define WEBPAGES
 
 #include <sys/types.h>
 //#include <sys/stat.h>
@@ -29,3 +30,5 @@ class webPages
 		void	setDefaultPage();
 
 }; // class webPages
+
+# endif

@@ -1,12 +1,14 @@
-#ifndef CONFIG_HPP
-# define CONFIG_HPP
+#ifndef CONFIGURATION_HPP
+# define CONFIGURATION_HPP
 
-# include "Parsing.hpp"
+class Configuration {};
 
-# include <map>
-# include <vector>
-# include <string>
-# include "Logger.hpp"
+#include "Parsing.hpp"
+#include "../Utils/Logger.hpp"
+
+#include <map>
+#include <vector>
+#include <string>
 
 namespace Webserv {
 

@@ -1,5 +1,4 @@
-#include "Connections_management.hpp"
-#include "Server_management.hpp"
+#include "ConnectionsManagement.hpp"
 
 #include <cerrno>
 #include <iostream>

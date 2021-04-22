@@ -1,6 +1,7 @@
-#pragma once
+#ifndef ROUTING_HPP
+# define ROUTING_HPP
 
-#include "Config.hpp"
+#include "../Configuration/Configuration.hpp"
 
 #include <algorithm>
 
@@ -26,3 +27,5 @@ inline bool compare_locations (const struct Configuration::location* a, const st
 
 }; // namespace Webserv
 }; // namespace Routing
+
+# endif

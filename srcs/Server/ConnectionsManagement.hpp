@@ -17,12 +17,12 @@
 #include <signal.h>
 
 #include "ServerSocket.hpp"
-#include "Config.hpp"
-#include "Logger.hpp"
-#include "Http/Request.hpp"
-#include "Http/Response.hpp"
 #include "Methods.hpp"
-#include "Utils.hpp"
+#include "../Http/Request.hpp"
+#include "../Http/Response.hpp"
+#include "../Configuration/Configuration.hpp"
+#include "../Utils/Logger.hpp"
+#include "../Utils/Utils.hpp"
 
 namespace Webserv {
 

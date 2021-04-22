@@ -18,12 +18,12 @@
 #include <signal.h>
 #include <deque>
 
-#include "Utils.hpp"
+#include "ConnectionsManagement.hpp"
 #include "ServerSocket.hpp"
-#include "Parsing.hpp"
-#include "Config.hpp"
-#include "Logger.hpp"
-#include "Connections_management.hpp"
+#include "../Configuration/Parsing.hpp"
+#include "../Configuration/Configuration.hpp"
+#include "../Utils/Utils.hpp"
+#include "../Utils/Logger.hpp"
 
 # define IN 0
 # define OUT 1
