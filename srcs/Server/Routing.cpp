@@ -26,7 +26,7 @@ const Configuration::server* select_server (const Configuration& config, const s
     std::vector<const struct Configuration::server*> selected_servers;
 
     for (vector_server_conf::const_iterator it = servers.begin(); it != servers.end(); ++it) {
-        if (it->_listen.second == ip && it->_listen.first == Utils::atoi(port.c_str()))
+        if (it->_listen.second == ip && it->_listen.first == Utils::atoi(port))
             selected_servers.push_back(&(*it));
     }
     if (selected_servers.empty()) {

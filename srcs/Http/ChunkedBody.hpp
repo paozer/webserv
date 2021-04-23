@@ -15,14 +15,15 @@ namespace Http {
 
 class ChunkedBody {
     public:
-        State decode (std::string chunked_body, size_t max_client_body_size = 1048576);
-
-        const std::string& get_body (void) const { return _body; }
-        const std::string& get_trailer_part (void) const { return _trailer_part; }
+        void decode (std::string& chunk, size_t max_client_body_size = 1048576);
+        inline const std::string& get_body (void) const { return _body; }
+        inline const std::string& get_trailer_part (void) const { return _trailer_part; }
+        inline const State& get_state (void) const { return _state; }
 
     private:
         std::string _body;
         std::string _trailer_part;
+        State _state;
 
 }; // class ChunkedBody
 

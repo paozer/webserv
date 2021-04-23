@@ -112,7 +112,7 @@ void Server::refused_connection(std::string const &socket_details)
 {
     std::string msg;
     _cli_len = sizeof(_cli_addr);
-    _cli_sock = accept(Utils::atoi(socket_details.c_str()), reinterpret_cast<struct sockaddr*>(&_cli_addr), &_cli_len);
+    _cli_sock = accept(Utils::atoi(socket_details), reinterpret_cast<struct sockaddr*>(&_cli_addr), &_cli_len);
     msg = "connection refused, max is reached\n";
     send(_cli_sock, msg.c_str(), msg.length(), 0);
     close(_cli_sock);
@@ -162,7 +162,7 @@ int Server::get_smaller_worker()
 
     for (int i = 0; i < _configuration.max_workers; ++i){
         send_msg(_pipes[i], GET_NB_CONNECTIONS);
-        tmp = Utils::atoi(receive_msg(_pipes[i]).c_str());
+        tmp = Utils::atoi(receive_msg(_pipes[i]));
         if (tmp < smaller_nb){
             smaller_nb = tmp;
             smaller_id = i;

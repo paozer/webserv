@@ -13,10 +13,14 @@ typedef std::vector<struct Configuration::server> vector_server_conf;
 const Configuration::location* select_location (const Configuration::server* server, const std::string& uri);
 const Configuration::server* select_server (const Configuration& config, const std::string& ip, const std::string& port, const std::string& host);
 
-inline std::string get_filepath (const std::string& location, const std::string& root, const std::string& uri)
+inline std::string get_filepath (const Configuration::location* location, const std::string& method, const std::string& uri)
 {
-    std::string filepath = root;
-    filepath += uri.substr(location.length());
+    std::string filepath;
+    if (method == "PUT" && !location->_upload_path.empty())
+        filepath = location->_upload_path;
+    else
+        filepath = location->_root;
+    filepath += uri.substr(location->_name.length());
     return filepath;
 }
 

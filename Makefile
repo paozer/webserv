@@ -15,8 +15,7 @@ SRCS 	=	srcs/main.cpp\
 			srcs/Configuration/Configuration.cpp\
 			srcs/Configuration/Parsing.cpp\
 			srcs/Utils/Utils.cpp\
-			srcs/Utils/Logger.cpp\
-			srcs/webPages.cpp
+			srcs/Utils/Logger.cpp
 
 UT_SRCS =	tests/unit_tests/main.cpp\
 			tests/unit_tests/ChunkedBody.cpp\

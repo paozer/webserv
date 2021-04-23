@@ -13,11 +13,7 @@ using namespace Webserv;
 
 int main(void)
 {
-    Http::Request request;
-    request.append("PUT /index.html HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nHello\r\n");
-    std::ostringstream oss;
-    request.print_state(oss);
-    std::cout << oss.str();
+    std::cout << Utils::atoi_base("3e8");
     return 0;
 }
 

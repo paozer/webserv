@@ -42,7 +42,6 @@ int     ConnectionManagement::loop_server(std::vector<ServerSocket> const &serv_
                 ++connections_loose;
             } else {
                 _s_buffer = std::string(buffer, _nbytes);
-                Log::out(_id, "reception: " +_s_buffer);
                 response_management(i);
             }
         }
@@ -72,7 +71,7 @@ int    ConnectionManagement::loop_worker()
                 ++connections_loose;
             } else {
                 _s_buffer = std::string(buffer, _nbytes);
-                Log::out(_id, "reception: " +_s_buffer);
+                //Log::out(_id, "reception: " +_s_buffer);
                 response_management(i);
             }
         }
@@ -80,18 +79,29 @@ int    ConnectionManagement::loop_worker()
     return connections_loose;
 }
 
-void    ConnectionManagement::response_management(int current_fd)
+void    ConnectionManagement::response_management(int fd)
 {
-    _incomplete_request[current_fd].append(_s_buffer);
-    Http::State state = _incomplete_request[current_fd].get_state();
+    Http::Request& request = _incomplete_request[fd];
+    request.append(_s_buffer);
+    Http::State state = request.get_state();
     if (state == Http::Complete || state == Http::Error) {
+
+        std::ostringstream oss;
+        request.print(oss);
+        std::cout << oss.str();
+
         Http::Response response;
-        response = Methods::method_handler(_incomplete_request[current_fd], _config);
+        response = Methods::method_handler(request, _config);
+        if (request.get_state() != Http::Error && request.get_method() != "HEAD")
+            response.set_content_length();
         response.build_raw_packet();
+
         _s_buffer = response.get_raw_packet();
-        if (FD_ISSET(current_fd, &_tmp_write_fds))
-            send(current_fd, _s_buffer.c_str(), _s_buffer.size(), 0);
-        _incomplete_request.erase(current_fd);
+        Log::out(_id, "Sent: " + _s_buffer);
+        if (FD_ISSET(fd, &_tmp_write_fds))
+            send(fd, _s_buffer.c_str(), _s_buffer.size(), 0);
+
+        _incomplete_request.erase(fd);
     }
 }
 

@@ -47,7 +47,7 @@ void    Worker::get_new_connection_fd()
 {
     _s_buffer = receive_msg(_pipe);
     pthread_mutex_lock(&_m_new);
-    _w_conf->tmp_connections = Utils::atoi(_s_buffer.c_str());
+    _w_conf->tmp_connections = Utils::atoi(_s_buffer);
     _w_conf->new_connection = true;
     pthread_mutex_unlock(&_m_new);
     while (_w_conf->new_connection);

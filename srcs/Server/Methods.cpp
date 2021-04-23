@@ -5,27 +5,27 @@ namespace Methods {
 
 Http::Response method_handler (const Http::Request& request, const Configuration& config)
 {
-    Http::Response response;
-    if (!request.has_header("Host")) {
-        // TODO move to Request class
-        response.set_status_code("400");
-        return response;
-    }
+    std::string host = request.has_header("host") ? request.get_header_values("host") : "";
 
-    std::string host = request.get_header_values("host");
     // ip and port that bind was called with i.e. related to the socket
     const Configuration::server* server = Routing::select_server(config, "127.0.0.1", "8080", host);
+    Http::Response response;
+    if (request.get_state() == Http::Error) {
+        fill_error_response(response, request.get_err_status_code(), server);
+        return response;
+    }
     const Configuration::location* location = Routing::select_location(server, request.get_uri());
-
     if (location == NULL) {
-        response.set_status_code("404");
+        fill_error_response(response, "404", server);
         return response;
     }
 
-    const std::string& filepath = Routing::get_filepath(location->_name, location->_root, request.get_uri());
+    const std::string& filepath = Routing::get_filepath(location, request.get_method(), request.get_uri());
+    Log::out("Methods: ", "filepath is " + filepath);
+
     const std::string& method = request.get_method();
     if (!method_is_allowed(location, method)) {
-        response.set_status_code("405");
+        fill_error_response(response, "405", server);
     } else if (method == "GET") {
         get(response, filepath, location);
     } else if (method == "HEAD") {
@@ -37,7 +37,7 @@ Http::Response method_handler (const Http::Request& request, const Configuration
         if (!request.has_header("Content-Range"))
             put(response, filepath, location->_upload_enable, request.get_body());
         else
-            response.set_status_code("400");
+            fill_error_response(response, "400", server);
     } else if (method == "DELETE") {
         // delete uri
     } else if (method == "CONNECT") {
@@ -47,6 +47,8 @@ Http::Response method_handler (const Http::Request& request, const Configuration
     } else if (method == "TRACE") {
         // return what was received
     }
+    // TODO call fill_error_response in http method implementations
+    fill_error_response(response, response.get_status_code(), server);
     return response;
 }
 
@@ -58,8 +60,9 @@ void put (Http::Response& response, const std::string& filepath, bool upload_ena
     int fd;
     response.set_status_code("200");
     if (upload_enabled) {
-        // if file does not exist set status_code to 201
-        if ((fd = open(filepath.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777)) == -1) {
+        if ((fd = open(filepath.c_str(), O_WRONLY | O_TRUNC)) == -1)
+            response.set_status_code("201");
+        if (fd == -1 && (fd = open(filepath.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0777)) == -1) {
             response.set_status_code("403");
             return ;
         }
@@ -81,19 +84,23 @@ void get (Http::Response& response, const std::string& filepath, const Configura
             if (stats.st_mode & S_IFDIR) {
                 response.set_status_code("200");
                 if (!location->_index.empty()) {
-                    response.set_body(get_file_content(location->_root + location->_index));
+
+                    std::string s;
+                    if (fill_with_file_content(s, filepath + "/" + location->_index) == -1)
+                        response.set_status_code("404");
+                    else
+                        response.set_body(s);
+
                 } else if (location->_autoindex) {
                     response.set_body(get_directory_listing(filepath));
                 } else {
                     response.set_status_code("403");
                 }
-                response.set_content_length();
             } else {
                 char buf[stats.st_size];
                 if (read(fd, &buf, stats.st_size) == stats.st_size) {
                     response.set_status_code("200");
                     response.set_body(std::string(buf, stats.st_size));
-                    response.set_content_length();
                 } else {
                     response.set_status_code("403");
                 }
@@ -103,7 +110,33 @@ void get (Http::Response& response, const std::string& filepath, const Configura
         }
         close(fd);
     } else {
-        response.set_status_code("403");
+        response.set_status_code("404");
+    }
+}
+
+int fill_with_file_content (std::string& s, const std::string& filepath)
+{
+    int fd;
+    if ((fd = open(filepath.c_str(), O_RDONLY)) > -1) {
+        struct stat stats;
+        if (fstat(fd, &stats) == 0) {
+            char buf[stats.st_size];
+            if (read(fd, &buf, stats.st_size) == stats.st_size)
+                s = std::string(buf, stats.st_size);
+        }
+        close(fd);
+        return 0;
+    }
+    return -1;
+}
+
+void fill_error_response (Http::Response& response, const std::string& status_code, const Configuration::server* server)
+{
+    response.set_status_code(status_code);
+    if (server != NULL) {
+        std::map<int, std::string>::const_iterator it = server->_error_pages.find(Utils::atoi(status_code));
+        if (it != server->_error_pages.end())
+            response.set_body(get_file_content(it->second));
     }
 }
 

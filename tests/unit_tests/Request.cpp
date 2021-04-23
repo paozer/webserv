@@ -5,31 +5,40 @@ namespace Webserv {
 namespace Http {
 
 //TODO check if trailer part contains illegal headers
-
 TEST_CASE("request reconstruction", "[Http][Request]") {
     Request r;
-    r.append("PUT /something HTT");
-    REQUIRE( r.get_state() == Requestline );
-    r.append("P/1.1");
-    REQUIRE( r.get_state() == Requestline );
-    r.append("\r\n");
-    REQUIRE( r.get_state() == Headers );
-    CHECK( r.get_method() == "PUT" );
-    CHECK( r.get_uri() == "/something" );
-    r.append("someheader: somevalue\r");
-    REQUIRE( r.get_state() == Headers );
-    r.append("\nsomething_else:somevalue1\r\nheader: val");
-    REQUIRE( r.get_state() == Headers );
-    REQUIRE( r.has_header("someheader") );
-    CHECK( r.get_header_values("someheader") == "somevalue" );
-    REQUIRE( r.has_header("something_else") );
-    CHECK( r.get_header_values("something_else") == "somevalue1" );
-    r.append("ue\r\n");
-    REQUIRE( r.get_state() == Headers );
-    REQUIRE( r.has_header("header") );
-    CHECK( r.get_header_values("header") == "value" );
-    r.append("\r\n");
-    REQUIRE( r.get_state() == Complete );
+    SECTION("") {
+        r.append("PUT /something HTT");
+        REQUIRE( r.get_state() == Requestline );
+        r.append("P/1.1");
+        REQUIRE( r.get_state() == Requestline );
+        r.append("\r\n");
+        REQUIRE( r.get_state() == Headers );
+        CHECK( r.get_method() == "PUT" );
+        CHECK( r.get_uri() == "/something" );
+        r.append("someheader: somevalue\r");
+        REQUIRE( r.get_state() == Headers );
+        r.append("\nsomething_else:somevalue1\r\nheader: val");
+        REQUIRE( r.get_state() == Headers );
+        REQUIRE( r.has_header("someheader") );
+        CHECK( r.get_header_values("someheader") == "somevalue" );
+        REQUIRE( r.has_header("something_else") );
+        CHECK( r.get_header_values("something_else") == "somevalue1" );
+        r.append("ue\r\n");
+        REQUIRE( r.get_state() == Headers );
+        REQUIRE( r.has_header("header") );
+        CHECK( r.get_header_values("header") == "value" );
+        r.append("\r\n");
+        REQUIRE( r.get_state() == Complete );
+    }
+    SECTION("") {
+        r.append("POST / HTTP/1.1\r\nHost: localhost:8080\r\nUser-Agent: Go-http-client/1.1\r\nTransfer-Encoding: chunked\r\nContent-");
+        REQUIRE( r.get_state() == Headers );
+        r.append("Type: test/file\r\nAccept-Encoding: gzip\r\n\r\n");
+        REQUIRE( r.get_state() == Body );
+        r.append("0\r\n\r\n");
+        REQUIRE( r.get_state() == Complete );
+    }
 }
 
 /* TESTING PARSING OF VALID REQUESTS */

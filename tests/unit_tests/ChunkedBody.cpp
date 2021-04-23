@@ -7,12 +7,12 @@ using namespace Http;
 TEST_CASE("", "[ChunkedBody][Http]")
 {
     ChunkedBody cb;
-    CHECK( cb.decode("2\r\nHi\r\n") == Incomplete );
-    CHECK( cb.get_body() == "Hi" );
     CHECK( cb.decode("2\r\nHi\r\n0\r\n\r\n") == Complete );
     CHECK( cb.get_body() == "Hi" );
     CHECK( cb.decode("4;ext=val\r\nTest\r\n0\r\nDate: today\r\nExpires: now\r\n\r\n") == Complete );
     CHECK( cb.get_body() == "Test" );
+    CHECK( cb.decode("2\r\nHi\r\n") == Incomplete );
+    CHECK( cb.get_body() == "Hi" );
     CHECK( cb.decode("4;ext=val\r\nTest\r\n") == Incomplete );
     CHECK( cb.get_body() == "Test" );
     CHECK_THROWS_AS( cb.decode("4;ext=val\r\nTest\r\n\r\nDate: today\r\nExpires: now\r\n\r\n"), InvalidPacketException );

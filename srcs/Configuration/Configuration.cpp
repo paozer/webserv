@@ -50,7 +50,7 @@ Configuration::location    Configuration::load_location(std::list<std::string>::
         } else if (key == "upload_enable") {
             new_loc._upload_enable = Utils::get_word(*it) == "on" ? true : false;
         } else if (key == "client_max_body_size") {
-            new_loc._client_max_body_size = Utils::atoi(Utils::get_word(*it).c_str());
+            new_loc._client_max_body_size = Utils::atoi(Utils::get_word(*it));
         } else if (key == "index") {
             new_loc._index = Utils::get_word(*it);
         } else if (key == "upload_path") {
@@ -85,9 +85,9 @@ void    Configuration::load_config(std::list<std::string> &conf)
         if (cmp == "server_name") {
             new_serv._server_name = Utils::get_word(*it);
         } else if (cmp == "error_page") {
-            new_serv._error_pages.insert(std::pair<int, std::string>(Utils::atoi(Utils::get_word(*it).c_str()), Utils::get_word(*it)));
+            new_serv._error_pages.insert(std::pair<int, std::string>(Utils::atoi(Utils::get_word(*it)), Utils::get_word(*it)));
         } else if (cmp == "listen") {
-            new_serv._listen = std::make_pair(Utils::atoi(Utils::get_word(*it).c_str()), Utils::get_word(*it));
+            new_serv._listen = std::make_pair(Utils::atoi(Utils::get_word(*it)), Utils::get_word(*it));
             if (new_serv._listen.second == "localhost")
                 new_serv._listen.second = "127.0.0.1";
         } else if (cmp == "root") {
@@ -155,19 +155,19 @@ void    Configuration::set_default(std::list<std::string> &conf)
         if (tmp == "log_enabled") {
             Log::prepare_file();
         } else if (tmp == "nb_workers") {
-            max_workers = Utils::atoi(Utils::get_word(*it).c_str());
+            max_workers = Utils::atoi(Utils::get_word(*it));
             if (max_workers < 0 || max_workers > 513)
                 throw ConfException("max workers", "must be >= 0 and <= 512");
         } else if (tmp == "workers_max_connections") {
-            max_connections_workers = Utils::atoi(Utils::get_word(*it).c_str());
+            max_connections_workers = Utils::atoi(Utils::get_word(*it));
             if (max_connections_workers < 0 || max_connections_workers > 124)
                 throw ConfException("workers's connections", "must be > 0 and <= 1024");
         } else if (tmp == "print_configuration") {
             print_conf = Utils::get_word(*it) == "on" ? true : false;
         } else if (tmp == "client_max_body_size") {
-            def_conf.client_max_body_size = Utils::atoi(Utils::get_word(*it).c_str());
+            def_conf.client_max_body_size = Utils::atoi(Utils::get_word(*it));
         } else if (tmp == "error_page") {
-            def_conf.error_pages.insert(std::pair<int, std::string>(Utils::atoi(Utils::get_word(*it).c_str()), Utils::get_word(*it)));
+            def_conf.error_pages.insert(std::pair<int, std::string>(Utils::atoi(Utils::get_word(*it)), Utils::get_word(*it)));
         } else if (tmp == "autoindex") {
             def_conf.auto_idx = Utils::get_word(*it) == "on" ? true : false;
         }

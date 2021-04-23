@@ -6,35 +6,26 @@ namespace Http {
 /* PARSING */
 void Request::append (const std::string& packet)
 {
+    _packet.append(packet);
     try {
-        _packet.append(packet);
-        if (_request_line.size() != 3) {
+        if (_request_line.empty()) {
             _state = Requestline;
             parse_request_line();
-            if (_request_line.size() != 3)
-                return ;
-            evaluate_request_line();
-            _state = Headers;
         }
         if (_state == Headers) {
             parse_headers();
-            evaluate_headers();
-            if (_packet.find(CRLF) == 0) {
-                _state = Body;
-                _packet.length() == 2 ? _state = Complete : 0;
-            }
         }
         if (_state == Body) {
-            parse_message_body();
+            parse_body();
+        }
+        if (_state == Complete) {
+            evaluate_request_line();
+            evaluate_headers();
         }
     } catch (const InvalidPacketException& e) {
-        Log::out("Request Parsing", e.what());
-        _error_status_code = e.what();
         _state = Error;
-    } catch (const std::exception& e) {
+        _error_status_code = e.get_err_status_code();
         Log::out("Request Parsing", e.what());
-        _error_status_code = "500";
-        _state = Error;
     }
 }
 
@@ -54,6 +45,7 @@ void Request::parse_request_line (void)
     i = _packet.find(CRLF, j);
     _request_line.push_back(_packet.substr(j, i - j));
     _packet.erase(0, _packet.find(CRLF) + 2);
+    _state = Headers;
 }
 
 void Request::parse_headers (void)
@@ -62,9 +54,7 @@ void Request::parse_headers (void)
     size_t j = 0;
     size_t pos_crlf = 0;
     std::string field_name;
-    while ((pos_crlf = _packet.find(CRLF)) != 0) {
-        if (pos_crlf == std::string::npos)
-            return ;
+    while ((pos_crlf = _packet.find(CRLF)) != 0 && pos_crlf != std::string::npos) {
         if (pos_crlf < (j = _packet.find(":")) || j == std::string::npos)
             throw InvalidPacketException("400", "expected new header but got something else");
         field_name = _packet.substr(0, j);
@@ -73,26 +63,28 @@ void Request::parse_headers (void)
         _headers[field_name] = _packet.substr(i, j - i + 1);
         _packet.erase(0, pos_crlf + 2);
     }
+    if (_packet.find(CRLF) == 0) {
+        _state = Body;
+        _packet.erase(0, 2);
+    }
 }
 
-void Request::parse_message_body (size_t max_client_body_size)
+void Request::parse_body (size_t max_client_body_size)
 {
-    _packet.erase(0, 2);
-    if (_packet.empty())
-        return ;
     if (has_header("Transfer-Encoding")) {
         if (get_header_values("Transfer-Encoding") != "chunked")
             throw InvalidPacketException("501", "unknown transfer encoding");
-        ChunkedBody cb;
-        if (cb.decode(_packet, max_client_body_size) == Complete)
+        _cb.decode(_packet, max_client_body_size);
+        //Log::out("Decoded Bytes", Utils::itoa(_cb.get_body().length()));
+        if (_cb.get_state() == Complete) {
             _state = Complete;
-        _body = cb.get_body();
-        _packet = cb.get_trailer_part();
-        parse_headers();
-        _headers.erase("Content-Length");
-        evaluate_headers();
+            _headers.erase("Content-Length");
+            _body = _cb.get_body();
+        } else if (_cb.get_state() == Error) {
+            throw InvalidPacketException("400", "invalid chunked message");
+        }
     } else if (has_header("Content-Length")) {
-        int len = Utils::atoi_base(get_header_values("Content-Length"));
+        int len = Utils::atoi(get_header_values("Content-Length"));
         if (len == -1)
             throw InvalidPacketException("400", "invalid content-length");
         if (static_cast<size_t>(len) > max_client_body_size)
@@ -100,8 +92,10 @@ void Request::parse_message_body (size_t max_client_body_size)
         _body = _packet.substr(0, len);
         if (static_cast<size_t>(len) == _packet.length())
             _state = Complete;
-    } else {
+    } else if (!_packet.empty()){
         throw InvalidPacketException("411", "missing transfer-encoding or content-length");
+    } else {
+        _state = Complete;
     }
 }
 
@@ -124,6 +118,8 @@ void Request::evaluate_headers (void) const
                 throw InvalidPacketException("400", "invalid character in header field-name");
         }
     }
+    if (!has_header("Host"))
+        throw InvalidPacketException("400", "missing host header");
 }
 
 }; // namespace Http

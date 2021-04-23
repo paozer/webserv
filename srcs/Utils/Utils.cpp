@@ -16,28 +16,68 @@ std::string join_strings_vector (const std::vector<std::string>& v, const std::s
     return str;
 }
 
-int atoi_base (const std::string& str, const std::string& base)
+int hex_to_int(const std::string &s)
 {
+    std::string str = s;
+    int n = 0;
     if (str.empty())
         return -1;
-    int n = 0;
-    size_t i = 0;
-    for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
-        if ((i = base.find(*it)) != std::string::npos) {
-            n *= 10;
-            n += i;
-        } else {
+    std::string base = "0123456789ABCDEF";
+    for (size_t i = 0; i < str.length(); ++i)
+    {
+        if (str[i] > 96 && str[i] < 123)
+            str[i] -= 32;
+        if (base.find(str[i]) == std::string::npos)
             return -1;
-        }
+        n *= 16;
+        for (size_t j = 0; j < base.length(); ++j)
+            if (str[i] == base[j])
+                n += j;
     }
     return n;
 }
 
+int atoi(const std::string& s)
+{
+    size_t i = 0;
+    while (i < s.length() && ((s[i] >= 9 && s[i] <= 13) || s[i] == 32))
+        ++i;
+    int sign = 1;
+    if (i < s.length() && s[i] == '-') {
+        sign *= -1;
+        ++i;
+    }
+    int nb = 0;
+    for (; i < s.length() && s[i] >= '0' && s[i] <= '9'; ++i)
+        nb = nb * 10 + s[i] - '0';
+    return nb * sign;
+}
+
+std::string         itoa(int n)
+{
+    long int        nb = n;
+    int             lenght = 1;
+    int             signe = 1;
+    std::string     res;
+
+    if (n == 0)
+        return "0";
+    nb < 0 ? n = n * -1 : signe = 0;
+    lenght = lenght + signe;
+    while (nb /= 10)
+    {
+        res.insert(res.begin(), n % 10 + 48);
+        n = n / 10;
+    }
+    res.insert(res.begin(), n % 10 + 48);
+    if (signe != 0)
+        res.insert(res.begin(), '-');
+    return (res);
+}
+
 bool    is_whitespace(char c)
 {
-    if ((c >= 9 && c <= 13) || c == 32)
-        return true;
-    return false;
+    return ((c >= 9 && c <= 13) || c == 32);
 }
 
 void    undo_whitespace(std::string &line)
@@ -56,50 +96,6 @@ void    undo_whitespace(std::string &line)
     }
 }
 
-int		atoi(const char *str)
-{
-	int		i;
-	int		nb;
-	int		sign;
-
-	sign = 1;
-	i = 0;
-	nb = 0;
-	while ((str[i] >= 9 && str[i] <= 13) || str[i] == 32)
-		i++;
-	if (str[i] == '+' || str[i] == '-')
-	{
-		if (str[i] == '-')
-			sign *= -1;
-		i++;
-	}
-	while (str[i] >= '0' && str[i] <= '9')
-		nb = nb * 10 + (int)str[i++] - '0';
-	return (nb * sign);
-}
-
-std::string			itoa(int n)
-{
-	long int		nb = n;
-	int	        	lenght = 1;
-	int     		signe = 1;
-	std::string     res;
-
-    if (n == 0)
-        return "0";
-    nb < 0 ? n = n * -1 : signe = 0;
-	lenght = lenght + signe;
-	while (nb /= 10)
-	{
-		res.insert(res.begin(), n % 10 + 48);
-		n = n / 10;
-	}
-    res.insert(res.begin(), n % 10 + 48);
-	if (signe != 0)
-		res.insert(res.begin(), '-');
-	return (res);
-}
-
 void    erase_word(std::string &str)
 {
     str.erase(0, str.find_first_of(" ") + 1);
@@ -110,7 +106,7 @@ std::string get_word(std::string &string)
     std::string res;
     size_t pos = string.find_first_of(" ");
 
-    if (pos != std::string::npos){
+    if (pos != std::string::npos) {
         res = string.substr(0, pos);
         erase_word(string);
     } else {
