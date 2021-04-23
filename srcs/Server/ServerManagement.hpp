@@ -16,7 +16,15 @@
 #include <strings.h> // bzero
 #include <stdlib.h>
 #include <signal.h>
-#include <deque>
+#include <pthread.h>
+
+#if defined(__linux__)
+	#include <bits/stdc++.h>
+#endif
+
+#if defined(__linux__)
+	#include <bits/stdc++.h>
+#endif
 
 #include "ConnectionsManagement.hpp"
 #include "ServerSocket.hpp"

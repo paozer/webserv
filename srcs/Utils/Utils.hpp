@@ -3,6 +3,7 @@
 
 #include <string>
 #include <list>
+#include <stdint.h> // uint16_t
 
 namespace Webserv {
 namespace Utils {

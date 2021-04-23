@@ -1,4 +1,5 @@
 #include "Methods.hpp"
+#include "../Cgi/phpCgi.hpp"
 
 namespace Webserv {
 namespace Methods {
@@ -65,7 +66,7 @@ Http::Response method_handler (const Http::Request& request, const Configuration
 
     const std::string& filepath = Routing::get_filepath(location, request.get_method(), request.get_uri());
     const std::string& method = request.get_method();
-    if (request.get_body().length() > location->_client_max_body_size) {
+    if (request.get_body().length() > static_cast<size_t>(location->_client_max_body_size)) {
         response.fill_with_error("413", server);
     } else if (!method_is_allowed(location, method)) {
         response.fill_with_error("405", server);
@@ -78,8 +79,7 @@ Http::Response method_handler (const Http::Request& request, const Configuration
     } else if (method == "POST") {
         if (request.get_uri().rfind(location->_cgi_extension) == request.get_uri().size() - location->_cgi_extension.size()) {
             // Log::out("methods", "cgi called");
-            CgiHandler cgi(request, location);
-            cgi.executeCgi(location->_cgi_path[0], response);
+		phpCgi cgi(method, server, location, request, response, filepath);
         } else if (!request.has_header("Content-Range")) {
             response.set_status_code("204");
             response.set_body("");
