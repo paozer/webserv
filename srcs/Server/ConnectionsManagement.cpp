@@ -81,16 +81,19 @@ int    ConnectionManagement::loop_worker()
 
 void    ConnectionManagement::response_management(int current_fd)
 {
-    Http::Request request;
-    Http::Response response;
-
-    request.parse_raw_packet(_s_buffer);
-    response = Methods::method_handler(request, _config);
-    response.build_raw_packet();
-    _s_buffer = response.get_raw_packet();
-
-    if (FD_ISSET(current_fd, &_tmp_write_fds))
-        send(current_fd, _s_buffer.c_str(), _s_buffer.size(), 0);
+    // _incomplete_request[current_fd].append(_s_buffer);
+    // Http::Request::State state = _incomplete_request[current_fd].get_state();
+    // if (state == Http::Request::Complete || state == Http::Request::Error) {
+    //     Http::Response response;
+    //     _incomplete_request[current_fd].parse_raw_packet(_s_buffer);
+    //     response = Methods::method_handler(_incomplete_request[current_fd], _config);
+    //     response.build_raw_packet();
+    //     _s_buffer = response.get_raw_packet();
+    _s_buffer = "good questions.\n";
+        if (FD_ISSET(current_fd, &_tmp_write_fds))
+            send(current_fd, _s_buffer.c_str(), _s_buffer.size(), 0);
+        _incomplete_request.erase(current_fd);
+    // }
 }
 
 bool    ConnectionManagement::is_server_fd(const int current_fd, std::vector<ServerSocket> const &serv_sock)

@@ -83,12 +83,19 @@ std::string get_time_infos()
 
 void out(std::string const &server_name, std::string const &str)
 {
+    int width;
     if (fd != -1){
         std::string     res(get_time_infos());
         if (server_name.size())
             res += ("[" + server_name + "]");
+        width = res.length() + 1;
         res += (" " + str);
-        if (str.back() != '\n')
+        for (size_t i = 1; i < res.length() - 1; ++i)
+            if (res[i - 1] == '\n') {
+                res.insert(i, width, ' ');
+                i += width;
+            }
+        if (str[str.length() - 1] != '\n')
             res += "\n";
         write(fd, res.c_str(), res.length());
     }

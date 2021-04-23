@@ -108,6 +108,17 @@ void    Server::sockets_settings()
 
 /*                 WORKER MANAGEMENT                  */
 
+void Server::refused_connection(std::string const &socket_details)
+{
+    std::string msg;
+    _cli_len = sizeof(_cli_addr);
+    _cli_sock = accept(Utils::atoi(socket_details.c_str()), reinterpret_cast<struct sockaddr*>(&_cli_addr), &_cli_len);
+    msg = "connection refused, max is reached\n";
+    send(_cli_sock, msg.c_str(), msg.length(), 0);
+    close(_cli_sock);
+    Log::out("server", "new connection refused, the maximum number of connections is reached");
+}
+
 int Server::new_worker(std::string const &socket_details)
 {
     if (_nb_worker < _configuration.max_workers){
@@ -131,12 +142,15 @@ int Server::new_worker(std::string const &socket_details)
         ++_nb_worker;
     } else {
         int     which = get_smaller_worker();
-        send_msg(_pipes[which], NEW_CONNECTION);
-        send_msg(_pipes[which], socket_details);
-        if (receive_msg(_pipes[which]) != CONNECTION_ACCEPTED)
-            Log::out("server", "error socket");
+        if (which == -1) {
+            refused_connection(socket_details);
+        } else {
+            send_msg(_pipes[which], NEW_CONNECTION);
+            send_msg(_pipes[which], socket_details);
+            if (receive_msg(_pipes[which]) != CONNECTION_ACCEPTED)
+                Log::out("server", "error socket");
+        }
     }
-
     return (1);
 }
 
@@ -154,7 +168,7 @@ int Server::get_smaller_worker()
             smaller_id = i;
         }
     }
-    return (smaller_id);
+    return smaller_nb < _configuration.max_connections_workers ? smaller_id : -1;
 }
 
 /*                 SERVER PART                  */

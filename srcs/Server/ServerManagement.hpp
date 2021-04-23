@@ -36,8 +36,6 @@
 
 namespace Webserv {
 
-static int      SERV_SOCK;
-
 std::string     receive_msg(int pipe[2]);
 bool            send_msg(int pipe[2], std::string msg);
 bool            wait_confirmation(int fd);
@@ -49,8 +47,7 @@ class Server
     public:
         Server(Configuration const &config);
         ~Server();
-        void    start();
-        // void                    stop_server();
+        void start();
 
     private:
         int                     _nb_worker;
@@ -69,9 +66,10 @@ class Server
 
         void                    main_loop_with_workers();
         void                    main_loop_without_workers();
-        int                     new_worker(std::string const &socket_details);
-        int                     get_smaller_worker();
         void                    sockets_settings();
+        int                     get_smaller_worker();
+        int                     new_worker(std::string const &socket_details);
+        void                    refused_connection(std::string const &socket_details);
 };
 
 struct  worker_config

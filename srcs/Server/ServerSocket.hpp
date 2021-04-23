@@ -8,7 +8,7 @@
 #include <fcntl.h> // fcntl
 #include <unistd.h> // close
 #include <errno.h>
-#include <strings.h>
+#include <string.h>
 
 namespace Webserv {
 

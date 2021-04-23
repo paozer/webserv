@@ -132,6 +132,7 @@ void    Worker::worker_routine()
         }
         _w_conf->nb_connections -= connections_loose;
         pthread_mutex_unlock(&_m_new);
+        connections_loose = 0;
         if (_w_conf->nb_connections) {
             connections_loose = _connections.loop_worker();
         }

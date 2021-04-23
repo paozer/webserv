@@ -27,7 +27,7 @@ Configuration::location    Configuration::load_location(std::list<std::string>::
     location        new_loc;
     std::string     key;
 
-    new_loc._name = (*it).back() == ' ' ? (*it).substr(0, (*it).size() - 1) : *it;
+    new_loc._name = (*it)[(*it).length() - 1] == ' ' ? (*it).substr(0, (*it).size() - 1) : *it;
     new_loc._client_max_body_size = 0;
     new_loc._set_auto_index = false;
     new_loc._upload_enable = false;
@@ -158,7 +158,7 @@ void    Configuration::set_default(std::list<std::string> &conf)
             max_workers = Utils::atoi(Utils::get_word(*it).c_str());
             if (max_workers < 0 || max_workers > 513)
                 throw ConfException("max workers", "must be >= 0 and <= 512");
-        } else if (tmp == "workers_max_connectioms") {
+        } else if (tmp == "workers_max_connections") {
             max_connections_workers = Utils::atoi(Utils::get_word(*it).c_str());
             if (max_connections_workers < 0 || max_connections_workers > 124)
                 throw ConfException("workers's connections", "must be > 0 and <= 1024");

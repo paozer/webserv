@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <map>
 
 #include <sys/wait.h>
 #include <sys/select.h>
@@ -39,6 +40,9 @@ class ConnectionManagement
         bool    is_server_fd(const int current_fd, std::vector<ServerSocket> const &serv_sock);
         void    response_management(int current_fd);
 
+        int             _max_fd;
+        int             _nbytes;
+        int             _nb_server;
         struct timeval  _tv;
         std::string     _id;
         std::string     _s_buffer;
@@ -46,11 +50,8 @@ class ConnectionManagement
         fd_set          _read_fds;
         fd_set          _tmp_write_fds;
         fd_set          _tmp_read_fds;
-        int             _max_fd;
-        int             _nbytes;
-
-        int             _nb_server;
         Configuration   _config;
+        std::map<int, Http::Request>  _incomplete_request;
 };
 
 }; // namespace Webserv
