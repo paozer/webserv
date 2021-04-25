@@ -107,8 +107,11 @@ bool    valid_methods(std::string line)
             line.erase(0, pos + 1);
         }
         for (int i = 0; !allowed_methods[i].empty(); ++i)
-            if (!tmp.compare(allowed_methods[i]))
-                find = true;
+            if (!tmp.compare(allowed_methods[i])) {
+                if (tmp == "CONNECT" || tmp == "TRACE")
+                    throw ConfException(line, tmp + " is not allowed on this server.");
+            find = true;
+            }
         if (!find)
             return false;
     }

@@ -39,13 +39,9 @@ Http::Response method_handler (const Http::Request& request, const Configuration
         else
             fill_error_response(response, "400", server);
     } else if (method == "DELETE") {
-        // delete uri
-    } else if (method == "CONNECT") {
-        // connect to the server identified by uri
+        delete_method(response, filepath);
     } else if (method == "OPTIONS") {
-        // return available commnunications options
-    } else if (method == "TRACE") {
-        // return what was received
+        options(response, location);
     }
     // TODO call fill_error_response in http method implementations
     fill_error_response(response, response.get_status_code(), server);
@@ -113,6 +109,22 @@ void get (Http::Response& response, const std::string& filepath, const Configura
         response.set_status_code("404");
     }
 }
+
+void options(Http::Response &response, const Configuration::location *location)
+{
+    response.set_status_code("200");
+    for (std::vector<std::string>::const_iterator it = location->_method.begin(); it != location->_method.end(); ++it)
+        response.append_header("Allow", *it);
+}
+
+void delete_method(Http::Response &response, const std::string &filepath)
+{
+    response.set_status_code("200");
+    std::cout << "del: " << filepath << std::endl;
+    if (remove(filepath.c_str()))
+        response.set_status_code("204");
+}
+
 
 int fill_with_file_content (std::string& s, const std::string& filepath)
 {

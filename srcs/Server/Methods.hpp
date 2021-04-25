@@ -19,6 +19,8 @@ namespace Methods {
 Http::Response method_handler (const Http::Request& request, const Configuration& config);
 void get (Http::Response& response, const std::string& filepath, const Configuration::location* location);
 void put (Http::Response& response, const std::string& filepath, bool upload_enabled, const std::string& content);
+void options(Http::Response &response, const Configuration::location *location);
+void delete_method(Http::Response &response, const std::string &filepath);
 
 void fill_error_response (Http::Response& response, const std::string& status_code, const Configuration::server* server);
 std::string get_directory_listing (const std::string& path);
