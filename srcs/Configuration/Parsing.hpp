@@ -9,7 +9,6 @@
 # include <unistd.h>
 # include <sys/stat.h>
 # include <fcntl.h>
-# include <sstream>
 
 # include "Configuration.hpp"
 # include "../Utils/Utils.hpp"
@@ -45,7 +44,8 @@ static std::string allowed_line_start[] = {
 static std::string allowed_line_out[] = {
     "server",               "log_enabled",          "#",
     "nb_workers",           "print_configuration",  "workers_max_connections",
-    "auth_basic",           "auth_basic_user_file", "\n",
+    "auth_basic",           "auth_basic_user_file", "client_max_body_size",
+    "\n",
     ""
 };
 

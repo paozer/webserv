@@ -10,6 +10,8 @@
 #include <errno.h>
 #include <string.h>
 
+#include "../Utils/Utils.hpp"
+
 namespace Webserv {
 
 class ServerSocket {

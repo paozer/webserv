@@ -50,7 +50,7 @@ class Configuration
         {
             bool                            _autoindex;
             bool                            _upload_enable;
-            size_t                          _client_max_body_size;
+            long                            _client_max_body_size;
             std::string                     _name;
             std::string                     _root;
             std::string                     _index;
@@ -66,7 +66,7 @@ class Configuration
 
         struct default_conf
         {
-            size_t                      client_max_body_size;
+            long                        client_max_body_size;
             bool                        auto_idx;
             std::map<int, std::string>  error_pages;
             std::string                 loc_name;
@@ -75,6 +75,7 @@ class Configuration
         int             max_workers;
         int             max_connections_workers;
         bool            print_conf;
+        bool            log;
         default_conf    def_conf;
         std::string     auth;
         std::string     auth_path;

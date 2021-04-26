@@ -25,7 +25,7 @@ int ServerSocket::set_socket_fd(const std::string& ip_address, int port)
     struct sockaddr_in sock_addr;
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = inet_addr(ip_address.c_str());
-    sock_addr.sin_port = htons(port);
+    sock_addr.sin_port = Utils::m_htons(port);
     bzero(&sock_addr.sin_zero, 8);
     if (sock_addr.sin_addr.s_addr == INADDR_NONE) {
         strerror(errno);
@@ -39,7 +39,7 @@ int ServerSocket::set_socket_fd(const std::string& ip_address, int port)
         return -1;
     }
 
-    if (listen(_socket_fd, 20) == -1) {
+    if (listen(_socket_fd, 1000) == -1) {
         strerror(errno);
         close(_socket_fd);
         return -1;

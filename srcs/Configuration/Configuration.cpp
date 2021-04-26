@@ -28,7 +28,7 @@ Configuration::location    Configuration::load_location(std::list<std::string>::
     std::string     key;
 
     new_loc._name = (*it)[(*it).length() - 1] == ' ' ? (*it).substr(0, (*it).size() - 1) : *it;
-    new_loc._client_max_body_size = 0;
+    new_loc._client_max_body_size = -1;
     new_loc._set_auto_index = false;
     new_loc._upload_enable = false;
     ++it;
@@ -49,8 +49,6 @@ Configuration::location    Configuration::load_location(std::list<std::string>::
             new_loc._set_auto_index = true;
         } else if (key == "upload_enable") {
             new_loc._upload_enable = Utils::get_word(*it) == "on" ? true : false;
-        } else if (key == "client_max_body_size") {
-            new_loc._client_max_body_size = Utils::atoi(Utils::get_word(*it));
         } else if (key == "index") {
             new_loc._index = Utils::get_word(*it);
         } else if (key == "upload_path") {
@@ -59,6 +57,8 @@ Configuration::location    Configuration::load_location(std::list<std::string>::
             new_loc._cgi_extension = Utils::get_word(*it);
         } else if (key == "cgi_path") {
             new_loc._cgi_path.push_back(Utils::get_word(*it));
+        } else if (key == "client_max_body_size") {
+            new_loc._client_max_body_size = Utils::atoi(Utils::get_word(*it));
         } else if (key == "root") {
             new_loc._root = Utils::get_word(*it);
         } else if (key == "method") {
@@ -126,8 +126,6 @@ void    Configuration::complete_location(Configuration::location &loc, Configura
         loc._cgi_extension = "";
     if (loc._upload_path.empty())
         loc._upload_path = "";
-    if (loc._client_max_body_size == 0)
-        loc._client_max_body_size = def_conf.client_max_body_size;
     if (!loc._set_auto_index)
         loc._autoindex = def_conf.auto_idx;
     if (loc.auth.empty())
@@ -139,6 +137,8 @@ void    Configuration::complete_location(Configuration::location &loc, Configura
         if (loc.auth_credentials.empty())
             throw ConfException("Authentification", "bad credential file format \"<user>:<password><newline>\".");
     }
+    if (loc._client_max_body_size == -1)
+        loc._client_max_body_size = def_conf.client_max_body_size;
 }
 
 void    Configuration::complete_config(Configuration::server &serv)
@@ -171,11 +171,14 @@ void    Configuration::set_default(std::list<std::string> &conf)
     auth = "off";
     max_connections_workers = -1;
     max_workers = -1;
+    def_conf.client_max_body_size = 111111111;
+    log = false;
     std::string tmp;
     for (std::list<std::string>::iterator it = conf.begin(); it != conf.end(); ++it)
     {
         tmp = Utils::get_word(*it);
         if (tmp == "log_enabled") {
+            log = true;
             Log::prepare_file();
         } else if (tmp == "nb_workers") {
             max_workers = Utils::atoi(Utils::get_word(*it));
@@ -189,6 +192,8 @@ void    Configuration::set_default(std::list<std::string> &conf)
             print_conf = Utils::get_word(*it) == "on" ? true : false;
         } else if (tmp == "client_max_body_size") {
             def_conf.client_max_body_size = Utils::atoi(Utils::get_word(*it));
+            if (def_conf.client_max_body_size < 0)
+                throw ConfException("client_max_body_size", "must be > 0");
         } else if (tmp == "error_page") {
             def_conf.error_pages.insert(std::pair<int, std::string>(Utils::atoi(Utils::get_word(*it)), Utils::get_word(*it)));
         } else if (tmp == "autoindex") {
@@ -215,17 +220,20 @@ Configuration::server*     Configuration::get_server(int id)
 
 void                    Configuration::print_configuration()
 {
-    std::cout << "\n                 --> Number of Servers : " <<  get_nb_server()  << " <--\n" << std::endl;
+    std::cout << "\nMax workers              : " << max_workers << std::endl;
+    std::cout << "Max worker's connections : " << max_connections_workers << std::endl;
+    std::cout << "Log enabled              : " << std::boolalpha << log <<  std::endl;
+    std::cout << "\n                        --> Number of Servers : " <<  get_nb_server()  << " <--\n" << std::endl;
     for (std::vector<Configuration::server>::iterator actual = _servers.begin(); actual != _servers.end(); ++actual)
     {
-        std::cout << "----------------------------------------------------------------" << std::endl;
-        std::cout << "                       ~ Config Server ~                        " << std::endl;
-        std::cout << "----------------------------------------------------------------" << std::endl;
+        std::cout << "------------------------------------------------------------------------------" << std::endl;
+        std::cout << "                              ~ Config Server ~                             " << std::endl;
+        std::cout << "------------------------------------------------------------------------------" << std::endl;
         std::cout << "Id        : " << (*actual)._id << std::endl;
         std::cout << "Serv Name : " << (*actual)._server_name << std::endl;
         std::cout << "Root      : " << (*actual)._root << std::endl;
         std::cout << "Listen on : " << (*actual)._listen.first << " " << (*actual)._listen.second << std::endl;
-        std::cout << "----------------------------------------------------------------" << std::endl;
+        std::cout << "------------------------------------------------------------------------------" << std::endl;
         std::cout << "Err Page:  ";
         for (std::map<int, std::string>::iterator it = (*actual)._error_pages.begin(); it != (*actual)._error_pages.end(); ++it){
             if (it == (*actual)._error_pages.begin())
@@ -235,7 +243,7 @@ void                    Configuration::print_configuration()
         }
         if ((*actual)._error_pages.empty())
             std::cout << std::endl;
-        std::cout << "----------------------------------------------------------------" << std::endl;
+        std::cout << "------------------------------------------------------------------------------" << std::endl;
         std::cout << "Location:  ";
         for (std::vector<Configuration::location>::iterator it = (*actual)._locations.begin(); it != (*actual)._locations.end(); ++it){
             std::string sp = "                 ";
@@ -264,7 +272,7 @@ void                    Configuration::print_configuration()
                 std::cout << " " << *iv;
             std::cout << std::endl;
         }
-        std::cout << "----------------------------------------------------------------" << std::endl;
+        std::cout << "------------------------------------------------------------------------------" << std::endl;
         std::cout << std::endl;
     }
 }

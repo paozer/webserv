@@ -86,8 +86,6 @@ void Request::parse_body (size_t max_client_body_size)
         int len = Utils::atoi_base(get_header_values("Content-Length"), "0123456789");
         if (len == -1)
             throw InvalidPacketException("400", "invalid content-length");
-        if (static_cast<size_t>(len) > max_client_body_size)
-            throw InvalidPacketException("413", "client body size too large");
         _body = _packet.substr(0, len);
         if (static_cast<size_t>(len) == _packet.length())
             _state = Complete;

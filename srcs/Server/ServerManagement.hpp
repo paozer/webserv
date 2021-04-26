@@ -36,11 +36,10 @@
 
 namespace Webserv {
 
-std::string     receive_msg(int pipe[2]);
-bool            send_msg(int pipe[2], std::string msg);
-bool            wait_confirmation(int fd);
-void            send_confirmation(int fd, bool status);
 void            signal_handler(int sig);
+void            *launch_worker(void *w);
+
+struct          worker_config;
 
 class Server
 {
@@ -51,10 +50,8 @@ class Server
 
     private:
         int                     _nb_worker;
-        int                     **_pipes;
         std::string             _s_buffer;
 
-        pid_t                   *_workers;
         Configuration           _configuration;
         ConnectionManagement    _connections;
 
@@ -64,51 +61,50 @@ class Server
         unsigned int            _cli_len;
         int                     _cli_sock;
 
+        worker_config           *_workers;
+
         void                    main_loop_with_workers();
         void                    main_loop_without_workers();
         void                    sockets_settings();
         int                     get_smaller_worker();
-        int                     new_worker(std::string const &socket_details);
+        void                    new_worker(std::string const &socket_details);
         void                    refused_connection(std::string const &socket_details);
 };
 
 struct  worker_config
 {
-    worker_config(int nb, int tmp, bool new_co, std::string w_id)
-        : nb_connections(nb), tmp_connections(tmp), new_connection(new_co), id(w_id) {}
+    worker_config() : nb_connections(0), tmp_connections(0), new_connection(false), stop(false) {}
     int             nb_connections;
     int             tmp_connections;
     bool            new_connection;
     bool            stop;
+    Configuration   conf;
+    pthread_t       th;
+    pthread_mutex_t access;
     std::string     id;
 };
 
 class Worker
 {
-    typedef void * (*THREADFUNCPTR)(void *);
 
     public:
-        Worker(Configuration const &config, int id, int pipe_in[2], int pipe_out[2]);
+        Worker(worker_config *w);
         ~Worker();
         Worker(const Worker &other);
         Worker& operator=(const Worker &other);
+        void                    worker_routine();
 
     private:
-        int                     _pipe[2];
         std::string             _id;
         std::string             _s_buffer;
 
         struct sockaddr_in      _cli_addr;
         unsigned int            _cli_len;
 
-        pthread_t               _th;
-        pthread_mutex_t         _m_new;
-
         Configuration           _configuration;
         ConnectionManagement    _connections;
         worker_config           *_w_conf;
 
-        void                    worker_routine();
         void                    accept_new_connection();
         void                    get_new_connection_fd();
         void                    send_num_connections();

@@ -42,9 +42,11 @@ int     ConnectionManagement::loop_server(std::vector<ServerSocket> const &serv_
                 ++connections_loose;
             } else {
                 _s_buffer = std::string(buffer, _nbytes);
-                response_management(i);
+                // Log::out(_id, _s_buffer);
+                response_construction(i);
             }
         }
+        response_sending(i);
     }
     return connections_loose;
 }
@@ -71,34 +73,56 @@ int    ConnectionManagement::loop_worker()
                 ++connections_loose;
             } else {
                 _s_buffer = std::string(buffer, _nbytes);
-                Log::out(_id, "reception: " +_s_buffer);
-                response_management(i);
+                response_construction(i);
             }
         }
+        response_sending(i);
     }
     return connections_loose;
 }
 
-void    ConnectionManagement::response_management(int fd)
+void    ConnectionManagement::response_sending(int fd)
+{
+    if (FD_ISSET(fd, &_tmp_write_fds) && !response_queue[fd].empty()){
+        send(fd, response_queue[fd].front().c_str(), response_queue[fd].front().size(), 0);
+        if (response_condition[fd].first == true) {
+            usleep(200);
+            std::string msg;
+            if (response_condition[fd].second == true) {
+                msg = "Start sending " + Utils::itoa(response_queue[fd].size()) + " chunks to " + Utils::itoa(fd) + ".";
+                Log::out(_id, msg);
+                // Log::out(_id, response_queue[fd].front().substr(0, 50).c_str());
+                response_condition[fd].second = false;
+            } else if (response_queue[fd].front().size() != 60000) {
+                msg = "End of sending to " + Utils::itoa(fd) + ".";
+                Log::out(_id, msg);
+            }
+        } else {
+            Log::out(_id, "sending response to " + Utils::itoa(fd));
+        }
+        response_queue[fd].pop_front();
+    }
+}
+
+void    ConnectionManagement::response_construction(int fd)
 {
     Http::Request& request = _incomplete_request[fd];
     request.append(_s_buffer, 300000000); // TODO max_client_body_size
     Http::State state = request.get_state();
     if (state == Http::Complete || state == Http::Error) {
-        std::ostringstream oss;
-        request.print(oss);
-        std::cout << oss.str();
-        Http::Response response = Methods::method_handler(request, _config);
+        Http::Response response;
+        response = Methods::method_handler(request, _config, fd);
         if (request.get_state() != Http::Error && request.get_method() != "HEAD")
             response.set_content_length();
         response.build_raw_packet();
-
-        _s_buffer = response.get_raw_packet();
-        if (FD_ISSET(fd, &_tmp_write_fds)) {
-            send(fd, _s_buffer.c_str(), _s_buffer.size(), 0);
-            Log::out(_id, "Sent: " + _s_buffer);
+        if (response.get_raw_packet().length() > 60000) {
+            long length = response.get_raw_packet().length();
+            for (long idx = 0; idx < length; idx += 60000)
+                response_queue[fd].push_back(response.get_raw_packet().substr(idx, 60000));
+            response_condition[fd] = std::make_pair(true, true);
         } else {
-            Log::out(_id, "Could not send. Socket is not set.");
+            response_queue[fd].push_back(response.get_raw_packet());
+            response_condition[fd] = std::make_pair(false, false);
         }
         _incomplete_request.erase(fd);
     }

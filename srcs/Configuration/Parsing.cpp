@@ -167,7 +167,7 @@ bool    parse_line_out_of_blocks(std::list<std::string> &conf, std::string &line
     return false;
 }
 
-std::vector<std::list<std::string> >    parse_file(std::string &file)
+std::vector<std::list<std::string> >    parse_file(std::string &file, int fd)
 {
     std::vector<std::list<std::string> >    res;
     size_t                                  line = 1;
@@ -198,6 +198,7 @@ std::vector<std::list<std::string> >    parse_file(std::string &file)
             throw ParsingException(line, "Unkown expression out of block");
         }
     }
+    close(fd);
     return res;
 }
 
@@ -219,7 +220,7 @@ std::vector<std::list<std::string> >    read_file(std::string const &file)
     }
     Utils::undo_whitespace(line);
     check_blocks(line);
-    return (parse_file(line));
+    return (parse_file(line, fd));
 }
 
 }; //namespace Parsing

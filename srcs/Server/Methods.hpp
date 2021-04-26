@@ -2,13 +2,14 @@
 #define METHODS_HPP
 
 #include "Routing.hpp"
+#include "ServerSocket.hpp"
 #include "../Http/Request.hpp"
 #include "../Http/Response.hpp"
 #include "../Http/Authentication.hpp"
 #include "../Configuration/Configuration.hpp"
 #include "../Utils/Files.hpp"
 #include "../Utils/Utils.hpp"
-
+#include "cgi.hpp"
 #include <dirent.h>
 #include <sys/stat.h>
 
@@ -18,9 +19,9 @@
 namespace Webserv {
 namespace Methods {
 
-Http::Response method_handler (const Http::Request& request, const Configuration& config);
 void get (Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server);
 void put (Http::Response& response, const std::string& filepath, bool upload_enabled, const std::string& content, const Configuration::server* server);
+Http::Response method_handler (const Http::Request& request, const Configuration& config, int fd);
 void options(Http::Response &response, const Configuration::location *location);
 void delete_method(Http::Response &response, const std::string &filepath);
 

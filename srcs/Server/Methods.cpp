@@ -32,14 +32,18 @@ Http::Response create_standard_response (void)
     return response;
 }
 
-Http::Response method_handler (const Http::Request& request, const Configuration& config)
+Http::Response method_handler (const Http::Request& request, const Configuration& config, int fd)
 {
     std::string host = request.has_header("host") ? request.get_header_values("host") : "";
     // ip and port that bind was called with i.e. related to the socket
-    const Configuration::server* server = Routing::select_server(config, "127.0.0.1", "8080", host);
 
+    struct sockaddr_in sin;
+    socklen_t len = sizeof(sin);
+    getsockname(fd, (struct sockaddr *)&sin, &len);
+
+    // ip and port that bind was called with i.e. related to the socket
+    const Configuration::server* server = Routing::select_server(config, Utils::inet_ntoa(sin.sin_addr.s_addr), Utils::itoa(Utils::m_htons(sin.sin_port)), host);
     Http::Response response = create_standard_response();
-
     if (request.get_state() == Http::Error) {
         response.fill_with_error(request.get_err_status_code(), server);
         return response;
@@ -61,17 +65,31 @@ Http::Response method_handler (const Http::Request& request, const Configuration
 
     const std::string& filepath = Routing::get_filepath(location, request.get_method(), request.get_uri());
     const std::string& method = request.get_method();
-    //Log::out("Methods: ", "filepath is " + filepath);
-    if (!method_is_allowed(location, method)) {
+    if (request.get_body().length() > location->_client_max_body_size) {
+        response.fill_with_error("413", server);
+    } else if (!method_is_allowed(location, method)) {
         response.fill_with_error("405", server);
-        options(response, location);
     } else if (method == "GET") {
         get(response, filepath, location, server);
     } else if (method == "HEAD") {
         get(response, filepath, location, server);
         response.unset_body();
+
     } else if (method == "POST") {
+        if (request.get_uri().rfind(location->_cgi_extension) == request.get_uri().size() - location->_cgi_extension.size()) {
+            // Log::out("methods", "cgi called");
+            CgiHandler cgi(request, location);
+            cgi.executeCgi(location->_cgi_path[0], response);
+        } else if (!request.has_header("Content-Range")) {
+            response.set_status_code("204");
+            response.set_body("");
+            // put(response, filepath, location->_upload_enable, request.get_body());
+        } else
+            response.fill_with_error("400", server);
+
+
     } else if (method == "PUT") {
+        // Log::out("filepath is ", filepath);
         if (!request.has_header("Content-Range"))
             put(response, filepath, location->_upload_enable, request.get_body(), server);
         else
@@ -101,6 +119,7 @@ void put (Http::Response& response, const std::string& filepath, bool upload_ena
         }
     }
     write(fd, content.c_str(), content.size());
+    close(fd);
 }
 
 void get (Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server)

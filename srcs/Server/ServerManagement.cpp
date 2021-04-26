@@ -12,42 +12,6 @@ void                signal_handler(int sig)
     stop_server = true;
 }
 
-bool                wait_confirmation(int fd)
-{
-    char ret;
-    read(fd, &ret, 1);
-    return ret == READY;
-}
-
-void                send_confirmation(int fd, bool status)
-{
-    std::string res;
-    res = status ? READY : ERROR;
-    write(fd, res.c_str(), 1);
-}
-
-bool                send_msg(int pipe[2], std::string msg)
-{
-    write(pipe[OUT], msg.c_str(), msg.length());
-    return (wait_confirmation(pipe[IN]));
-}
-
-std::string         receive_msg(int pipe[2])
-{
-    char            buffer[BUFFER_SIZE];
-    std::string     res;
-
-    bzero(buffer, BUFFER_SIZE);
-    if (read(pipe[IN], &buffer, BUFFER_SIZE) < 0) {
-        send_confirmation(pipe[OUT], false);
-        return "error";
-    } else {
-        res = buffer;
-        send_confirmation(pipe[OUT], true);
-    }
-    return res;
-}
-
 /*                      SERVER                       */
 
 Server::Server(Configuration const &config)
@@ -57,27 +21,19 @@ Server::Server(Configuration const &config)
     _connections = connections;
     sockets_settings();
     signal(SIGINT, signal_handler);
-    _workers = new pid_t[_configuration.max_workers];
-    _pipes = new int* [_configuration.max_workers];
-    for (int i = 0; i < _configuration.max_workers; ++i)
-        _pipes[i] = new int[2];
-    stop_server = false;
+    _workers = new worker_config[_configuration.max_workers];
 }
 
 Server::~Server()
 {
-    for (int i = 0; i < _nb_worker; ++i)
-    {
-        send_msg(_pipes[i], EXIT);
-        waitpid(_workers[i], NULL, 0);
-        close(_pipes[i][IN]);
-        close(_pipes[i][OUT]);
+    for (int i = 0; i < _nb_worker; ++i) {
+        pthread_mutex_lock(&_workers[i].access);
+        _workers[i].stop = false;
+        pthread_mutex_unlock(&_workers[i].access);
     }
-    for (int i = 0; i < _configuration.max_workers; ++i)
-        delete[] _pipes[i];
-    delete[] _pipes;
+    for (int i = 0; i < _nb_worker; ++i)
+        pthread_join(_workers[i].th, NULL);
     delete[] _workers;
-    usleep(500);
     Log::out("Server", "stop");
     close(Log::fd);
 }
@@ -119,54 +75,47 @@ void Server::refused_connection(std::string const &socket_details)
     Log::out("server", "new connection refused, the maximum number of connections is reached");
 }
 
-int Server::new_worker(std::string const &socket_details)
+void Server::new_worker(std::string const &socket_details)
 {
     if (_nb_worker < _configuration.max_workers){
-        int pipe_in[2];
-        int pipe_out[2];
-        pipe(pipe_in);
-        pipe(pipe_out);
-        _workers[_nb_worker] = fork();
-        if (_workers[_nb_worker] == 0){
-            Worker(_configuration, _nb_worker, pipe_in, pipe_out); // Child read in pipe in and receive in pipe out
-            exit(EXIT_SUCCESS);
-        }
-        close(pipe_in[IN]);
-        close(pipe_out[OUT]);
-        _pipes[_nb_worker][IN] = pipe_out[IN];
-        _pipes[_nb_worker][OUT] = pipe_in[OUT];
-        send_msg(_pipes[_nb_worker], NEW_CONNECTION);
-        send_msg(_pipes[_nb_worker], socket_details);
-        if (receive_msg(_pipes[_nb_worker]) != CONNECTION_ACCEPTED)
-            Log::out("server", "error socket");
+        pthread_mutex_init(&_workers[_nb_worker].access, NULL);
+        _workers[_nb_worker].id = Utils::itoa(_nb_worker);
+        _workers[_nb_worker].new_connection = true;
+        _workers[_nb_worker].tmp_connections = Utils::atoi(socket_details);
+        _workers[_nb_worker].conf = _configuration;
+        pthread_create(&_workers[_nb_worker].th, NULL, launch_worker, &(_workers[_nb_worker]));
+        // pthread_detach(_workers[_nb_worker].th);
         ++_nb_worker;
     } else {
-        int     which = get_smaller_worker();
-        if (which == -1) {
-            refused_connection(socket_details);
+        int which = get_smaller_worker();
+        if (which != -1) {
+            pthread_mutex_lock(&_workers[which].access);
+            _workers[which].new_connection = true;
+            _workers[which].tmp_connections = Utils::atoi(socket_details);
+            pthread_mutex_unlock(&_workers[which].access);
+            for (bool state = true; !state;) {
+                pthread_mutex_lock(&_workers[which].access);
+                state = _workers[which].new_connection;
+                pthread_mutex_unlock(&_workers[which].access);
+            }
         } else {
-            send_msg(_pipes[which], NEW_CONNECTION);
-            send_msg(_pipes[which], socket_details);
-            if (receive_msg(_pipes[which]) != CONNECTION_ACCEPTED)
-                Log::out("server", "error socket");
+            refused_connection(socket_details);
         }
     }
-    return (1);
 }
 
 int Server::get_smaller_worker()
 {
     int     smaller_id;
     int     smaller_nb = INT_MAX;
-    int     tmp = 0;
 
     for (int i = 0; i < _configuration.max_workers; ++i){
-        send_msg(_pipes[i], GET_NB_CONNECTIONS);
-        tmp = Utils::atoi(receive_msg(_pipes[i]));
-        if (tmp < smaller_nb){
-            smaller_nb = tmp;
+        pthread_mutex_lock(&_workers[i].access);
+        if (_workers[i].nb_connections < smaller_nb) {
+            smaller_nb = _workers[i].nb_connections;
             smaller_id = i;
         }
+        pthread_mutex_unlock(&_workers[i].access);
     }
     return smaller_nb < _configuration.max_connections_workers ? smaller_id : -1;
 }
@@ -221,8 +170,8 @@ void    Server::main_loop_with_workers()
                 new_worker(Utils::itoa(_socket[i].get_fd()));
                 FD_CLR(_socket[i].get_fd(), &tmp_socket);
             }
-            sleep(1);
         }
+            // sleep(1);
     }
 }
 
