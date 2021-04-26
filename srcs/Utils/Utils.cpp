@@ -1,38 +1,23 @@
-# include "Utils.hpp"
+#include "Utils.hpp"
 
 namespace Webserv {
 namespace Utils {
 
-std::string join_strings_vector (const std::vector<std::string>& v, const std::string& delimiter, const std::string& endline)
+int atoi_base(const std::string &s, const std::string& base)
 {
-    std::string str;
-    for (std::vector<std::string>::const_iterator it = v.begin(); it!= v.end(); ) {
-        str.append(*it);
-        if (++it != v.end())
-            str.append(delimiter);
-        else
-            str.append(endline);
-    }
-    return str;
-}
-
-int hex_to_int(const std::string &s)
-{
-    std::string str = s;
-    int n = 0;
-    if (str.empty())
+    if (s.empty())
         return -1;
-    std::string base = "0123456789ABCDEF";
-    for (size_t i = 0; i < str.length(); ++i)
-    {
-        if (str[i] > 96 && str[i] < 123)
-            str[i] -= 32;
-        if (base.find(str[i]) == std::string::npos)
+    int n = 0;
+    size_t j = 0;
+    std::string str = s;
+    for (size_t i = 0; i < str.length(); ++i) {
+        str[i] = tolower(str[i]);
+        if ((j = base.find(str[i])) == std::string::npos) {
             return -1;
-        n *= 16;
-        for (size_t j = 0; j < base.length(); ++j)
-            if (str[i] == base[j])
-                n += j;
+        } else {
+            n *= base.length();
+            n += j;
+        }
     }
     return n;
 }
@@ -40,7 +25,7 @@ int hex_to_int(const std::string &s)
 int atoi(const std::string& s)
 {
     size_t i = 0;
-    while (i < s.length() && ((s[i] >= 9 && s[i] <= 13) || s[i] == 32))
+    while (i < s.length() && is_whitespace(s[i]))
         ++i;
     int sign = 1;
     if (i < s.length() && s[i] == '-') {
@@ -53,37 +38,30 @@ int atoi(const std::string& s)
     return nb * sign;
 }
 
-std::string         itoa(int n)
+std::string itoa(int n)
 {
     long int        nb = n;
-    int             lenght = 1;
-    int             signe = 1;
+    int             length = 1;
+    int             sign = 1;
     std::string     res;
 
     if (n == 0)
         return "0";
-    nb < 0 ? n = n * -1 : signe = 0;
-    lenght = lenght + signe;
-    while (nb /= 10)
-    {
+    nb < 0 ? n = n * -1 : sign = 0;
+    length = length + sign;
+    while (nb /= 10) {
         res.insert(res.begin(), n % 10 + 48);
         n = n / 10;
     }
     res.insert(res.begin(), n % 10 + 48);
-    if (signe != 0)
+    if (sign != 0)
         res.insert(res.begin(), '-');
     return (res);
 }
 
-bool    is_whitespace(char c)
+void undo_whitespace(std::string &line)
 {
-    return ((c >= 9 && c <= 13) || c == 32);
-}
-
-void    undo_whitespace(std::string &line)
-{
-    for (size_t i = 0; i < line.size(); )
-    {
+    for (size_t i = 0; i < line.size(); ) {
         if (i && line[i] == '#' && line[i-1] != '\n')
             line.insert(i, 1, '\n');
         else if (is_whitespace(line[i]) && ((line[i+1] && is_whitespace(line[i + 1]))
@@ -94,11 +72,6 @@ void    undo_whitespace(std::string &line)
         else
             ++i;
     }
-}
-
-void    erase_word(std::string &str)
-{
-    str.erase(0, str.find_first_of(" ") + 1);
 }
 
 std::string get_word(std::string &string)
@@ -116,11 +89,19 @@ std::string get_word(std::string &string)
     return res;
 }
 
-char tolower (char c)
+std::list<std::string> split (const std::string& s, const std::string& delimiter)
 {
-    if ('A' <= c && c <= 'Z')
-        return c + 32;
-    return c;
+    size_t i = 0;
+    size_t j = 0;
+    std::list<std::string> ret;
+    while (true) {
+        j = s.find(delimiter, i);
+        ret.push_back(s.substr(i, j - i - 1));
+        if (j == std::string::npos)
+            break ;
+        i = j + 1;
+    }
+    return ret;
 }
 
 }; // namespace Utils

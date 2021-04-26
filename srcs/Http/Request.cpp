@@ -4,7 +4,7 @@ namespace Webserv {
 namespace Http {
 
 /* PARSING */
-void Request::append (const std::string& packet)
+void Request::append (const std::string& packet, size_t client_max_body_size)
 {
     _packet.append(packet);
     try {
@@ -16,7 +16,7 @@ void Request::append (const std::string& packet)
             parse_headers();
         }
         if (_state == Body) {
-            parse_body();
+            parse_body(client_max_body_size);
         }
         if (_state == Complete) {
             evaluate_request_line();
@@ -75,7 +75,6 @@ void Request::parse_body (size_t max_client_body_size)
         if (get_header_values("Transfer-Encoding") != "chunked")
             throw InvalidPacketException("501", "unknown transfer encoding");
         _cb.decode(_packet, max_client_body_size);
-        //Log::out("Decoded Bytes", Utils::itoa(_cb.get_body().length()));
         if (_cb.get_state() == Complete) {
             _state = Complete;
             _headers.erase("Content-Length");
@@ -84,7 +83,7 @@ void Request::parse_body (size_t max_client_body_size)
             throw InvalidPacketException("400", "invalid chunked message");
         }
     } else if (has_header("Content-Length")) {
-        int len = Utils::atoi(get_header_values("Content-Length"));
+        int len = Utils::atoi_base(get_header_values("Content-Length"), "0123456789");
         if (len == -1)
             throw InvalidPacketException("400", "invalid content-length");
         if (static_cast<size_t>(len) > max_client_body_size)

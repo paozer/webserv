@@ -13,7 +13,7 @@ namespace Http {
 class Request
 {
     public:
-        void append (const std::string& packet);
+        void append (const std::string& packet, size_t client_max_body_size);
         inline bool has_header (const std::string& name) const { return _headers.find(name) != _headers.end(); }
         inline const std::string& get_err_status_code (void) const { return _error_status_code; }
         inline const State& get_state (void) const { return _state; }
@@ -42,14 +42,13 @@ class Request
             else
                 oss << "woops\n";
             oss << "##############################################################\n";
-            oss << "##############################################################\n";
             for (auto it = _request_line.begin(); it != _request_line.end(); ++it)
                 oss << *it + " ";
-            oss << "##############################################################\n";
+            oss << "\n##############################################################\n";
             for (auto it = _headers.begin(); it != _headers.end(); ++it)
                 oss << it->first << " " << it->second << "\n";
             oss << "##############################################################\n";
-            oss << "[" << _body.substr(0, 120) << "]\n";
+            oss << "[" << _body.substr(0, 60) << "]\n";
             oss << "##############################################################\n";
             oss << "\n\n";
         }
@@ -72,7 +71,7 @@ class Request
         void parse_request_line (void);
         void parse_headers (void);
         HeaderValues parse_header_values (const std::string& field_name, const std::string& field_values) const;
-        void parse_body (size_t client_max_body_size = 1048576);
+        void parse_body (size_t client_max_body_size);
 
 }; // class HttpRequest
 

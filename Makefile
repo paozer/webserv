@@ -3,31 +3,32 @@
 NAME	=	webserv
 
 SRCS 	=	srcs/main.cpp\
-			srcs/Server/ServerSocket.cpp\
-			srcs/Server/Methods.cpp\
-			srcs/Server/ServerManagement.cpp\
-			srcs/Server/Routing.cpp\
-			srcs/Server/ConnectionsManagement.cpp\
-			srcs/Server/Worker.cpp\
-			srcs/Http/Request.cpp\
-			srcs/Http/Response.cpp\
-			srcs/Http/ChunkedBody.cpp\
 			srcs/Configuration/Configuration.cpp\
 			srcs/Configuration/Parsing.cpp\
-			srcs/Utils/Utils.cpp\
-			srcs/Utils/Logger.cpp
+			srcs/Http/Authentication.cpp\
+			srcs/Http/ChunkedBody.cpp\
+			srcs/Http/Request.cpp\
+			srcs/Http/Response.cpp\
+			srcs/Server/ConnectionsManagement.cpp\
+			srcs/Server/Methods.cpp\
+			srcs/Server/Routing.cpp\
+			srcs/Server/ServerManagement.cpp\
+			srcs/Server/ServerSocket.cpp\
+			srcs/Server/Worker.cpp\
+			srcs/Utils/Files.cpp\
+			srcs/Utils/Logger.cpp\
+			srcs/Utils/Utils.cpp
 
 UT_SRCS =	tests/unit_tests/main.cpp\
-			tests/unit_tests/ChunkedBody.cpp\
+			tests/unit_tests/Methods.cpp\
 			tests/unit_tests/Request.cpp\
-			tests/unit_tests/Response.cpp\
-			tests/unit_tests/Methods.cpp
+			tests/unit_tests/Response.cpp
 
 INCS	= $($(filter-out srcs/main.cpp, $(SRCS)):.cpp=.hpp)
 INCS	:= $(addsuffix srcs/Http/Http.hpp, $(INCS))
 
 CC		=	clang++
-CFLAGS	=	-fsanitize=address -g3 -Wall -Wextra -std=c++98
+CFLAGS	=	-fsanitize=address -g3 -Wall -Wextra -std=c++11
 UT_CFLAGS =	-fsanitize=address -g3 -Wall -Wextra -std=c++11
 
 

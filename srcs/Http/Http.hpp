@@ -1,9 +1,9 @@
-#ifndef HTTP_HTTP_HPP
-#define HTTP_HTTP_HPP
+#ifndef HTTP_HPP
+#define HTTP_HPP
 
 #include "../Utils/Utils.hpp"
 
-#include <cctype>
+#include <ctype.h>
 
 #include <string>
 #include <map>
@@ -14,10 +14,6 @@
 
 namespace Webserv {
 namespace Http {
-
-// TODO
-// - set line length limit
-// - handle header duplicates
 
 enum State
 {
@@ -59,8 +55,8 @@ class InvalidPacketException : std::exception
         {
         }
 
-        const char* what (void) const throw() { return _err_description.c_str(); }
-        const char* get_err_status_code (void) const { return _err_code.c_str(); }
+        inline const char* what (void) const throw() { return _err_description.c_str(); }
+        inline const char* get_err_status_code (void) const { return _err_code.c_str(); }
 
     private:
         std::string _err_code;

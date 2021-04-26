@@ -2,6 +2,8 @@
 #define HTTP_RESPONSE_HPP
 
 #include "Http.hpp"
+#include "../Configuration/Configuration.hpp"
+#include "../Utils/Files.hpp"
 
 namespace Webserv {
 namespace Http {
@@ -10,6 +12,7 @@ class Response
 {
     public:
         void build_raw_packet (void);
+        void fill_with_error (const std::string& status_code, const Configuration::server* server);
         inline const std::string& get_raw_packet (void) const { return _raw_packet; }
         inline const std::string& get_status_code (void) const { return _status_code; }
         inline void set_status_code (const std::string& status_code) { _status_code = status_code; }

@@ -82,25 +82,24 @@ int    ConnectionManagement::loop_worker()
 void    ConnectionManagement::response_management(int fd)
 {
     Http::Request& request = _incomplete_request[fd];
-    request.append(_s_buffer);
+    request.append(_s_buffer, 300000000); // TODO max_client_body_size
     Http::State state = request.get_state();
     if (state == Http::Complete || state == Http::Error) {
-
         std::ostringstream oss;
         request.print(oss);
         std::cout << oss.str();
-
-        Http::Response response;
-        response = Methods::method_handler(request, _config);
+        Http::Response response = Methods::method_handler(request, _config);
         if (request.get_state() != Http::Error && request.get_method() != "HEAD")
             response.set_content_length();
         response.build_raw_packet();
 
         _s_buffer = response.get_raw_packet();
-        Log::out(_id, "Sent: " + _s_buffer);
-        if (FD_ISSET(fd, &_tmp_write_fds))
+        if (FD_ISSET(fd, &_tmp_write_fds)) {
             send(fd, _s_buffer.c_str(), _s_buffer.size(), 0);
-
+            Log::out(_id, "Sent: " + _s_buffer);
+        } else {
+            Log::out(_id, "Could not send. Socket is not set.");
+        }
         _incomplete_request.erase(fd);
     }
 }

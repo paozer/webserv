@@ -29,8 +29,7 @@ const Configuration::server* select_server (const Configuration& config, const s
         if (it->_listen.second == ip && it->_listen.first == Utils::atoi(port))
             selected_servers.push_back(&(*it));
     }
-    if (selected_servers.empty()) {
-        // this should never happen
+    if (selected_servers.empty()) { // this should never happen
         return NULL;
     } else if (selected_servers.size() > 1) {
         for (vector_server_conf::const_iterator it = servers.begin(); it != servers.end(); ++it) {

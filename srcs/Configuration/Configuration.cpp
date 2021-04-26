@@ -160,7 +160,7 @@ void    Configuration::set_default(std::list<std::string> &conf)
                 throw ConfException("max workers", "must be >= 0 and <= 512");
         } else if (tmp == "workers_max_connections") {
             max_connections_workers = Utils::atoi(Utils::get_word(*it));
-            if (max_connections_workers < 0 || max_connections_workers > 124)
+            if (max_connections_workers < 0 || max_connections_workers > 1024)
                 throw ConfException("workers's connections", "must be > 0 and <= 1024");
         } else if (tmp == "print_configuration") {
             print_conf = Utils::get_word(*it) == "on" ? true : false;
