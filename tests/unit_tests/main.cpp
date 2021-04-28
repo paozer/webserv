@@ -1,21 +1,20 @@
 #ifdef NO_UNIT_TESTS
 
-#include "../../srcs/Http/Request.hpp"
-#include "../../srcs/Http/Response.hpp"
-#include "../../srcs/Server/Methods.hpp"
-#include "../../srcs/Server/Routing.hpp"
-#include "../../srcs/Http/Authentication.hpp"
-
+#include <time.h>
+#include <sys/time.h>
 #include <iostream>
 #include <sstream>
 #include <string>
-
-using namespace Webserv;
+#include "../../srcs/Utils/Time.hpp"
+#include "../../srcs/Utils/Files.hpp"
 
 int main(void)
 {
-    std::string s = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
-    std::cout << Http::base64_decode(s);
+    std::string s;
+    Webserv::Files::fill_with_file_content (s, "./tests/intra_tests/passwd");
+    std::list<std::string> l = Webserv::Utils::split(s, "\n");
+    for (auto it = l.begin(); it != l.end(); ++it)
+        std::cout << *it << std::endl;
     return 0;
 }
 

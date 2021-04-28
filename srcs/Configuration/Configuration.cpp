@@ -64,7 +64,12 @@ Configuration::location    Configuration::load_location(std::list<std::string>::
         } else if (key == "method") {
             while (!(*it).empty())
                 new_loc._method.push_back(Utils::get_word(*it));
+        } else if (key == "auth_basic") {
+            new_loc.auth = Utils::get_word(*it);
+        } else if (key == "auth_basic_user_file") {
+            new_loc.auth_path = Utils::get_word(*it);
         }
+
         ++it;
     }
     return new_loc;
@@ -92,6 +97,10 @@ void    Configuration::load_config(std::list<std::string> &conf)
                 new_serv._listen.second = "127.0.0.1";
         } else if (cmp == "root") {
             new_serv._root = Utils::get_word(*it);
+        } else if (cmp == "auth_basic") {
+            new_serv.auth = Utils::get_word(*it);
+        } else if (cmp == "auth_basic_user_file") {
+            new_serv.auth_path = Utils::get_word(*it);
         } else if (cmp == "location") {
             new_serv._locations.push_back(load_location(it));
         } else
@@ -101,7 +110,7 @@ void    Configuration::load_config(std::list<std::string> &conf)
     _servers.push_back(new_serv);
 }
 
-void    Configuration::complete_location(Configuration::location &loc)
+void    Configuration::complete_location(Configuration::location &loc, Configuration::server &server)
 {
     if (loc._name.empty())
         loc._name = "/";
@@ -109,6 +118,8 @@ void    Configuration::complete_location(Configuration::location &loc)
         loc._root = "";
     if (loc._index.empty())
         loc._index = "";
+    if (loc.auth.empty())
+        loc.auth = server.auth;
     if (loc._cgi_path.empty())
         loc._cgi_path.push_back("");
     if (loc._cgi_extension.empty())
@@ -119,6 +130,15 @@ void    Configuration::complete_location(Configuration::location &loc)
         loc._client_max_body_size = def_conf.client_max_body_size;
     if (!loc._set_auto_index)
         loc._autoindex = def_conf.auto_idx;
+    if (loc.auth.empty())
+        loc.auth = auth;
+    if (loc.auth != "off") {
+        if (loc.auth_path.empty())
+            throw ConfException("Authentification", "missing credential file.");
+        loc.auth_credentials = Utils::split(Files::get_file_content(loc.auth_path), "\n");
+        if (loc.auth_credentials.empty())
+            throw ConfException("Authentification", "bad credential file format \"<user>:<password><newline>\".");
+    }
 }
 
 void    Configuration::complete_config(Configuration::server &serv)
@@ -129,13 +149,15 @@ void    Configuration::complete_config(Configuration::server &serv)
         serv._listen = std::pair<int, std::string>(80, "127.0.0.1");
     if (serv._root.empty())
         serv._root = "";
+    if (serv.auth.empty())
+        serv.auth = auth;
     if (serv._locations.empty()){
         Configuration::location default_loc;
-        complete_location(default_loc);
+        complete_location(default_loc, serv);
         serv._locations.push_back(default_loc);
     } else {
         for (std::vector<Configuration::location>::iterator it = serv._locations.begin(); it != serv._locations.end(); ++it)
-            complete_location(*it);
+            complete_location(*it, serv);
     }
     for (std::map<int, std::string>::iterator it = def_conf.error_pages.begin(); it != def_conf.error_pages.end(); ++it)
         if (serv._error_pages.find((*it).first) == serv._error_pages.end())
@@ -146,6 +168,7 @@ void    Configuration::set_default(std::list<std::string> &conf)
 {
     print_conf = false;
     def_conf.auto_idx = false;
+    auth = "off";
     max_connections_workers = -1;
     max_workers = -1;
     std::string tmp;
@@ -219,16 +242,24 @@ void                    Configuration::print_configuration()
             if (it != (*actual)._locations.begin())
                 std::cout << "           ";
             std::cout << (*it)._name << std::endl;
-            std::cout << sp << "root                  : " << (*it)._root << std::endl;
-            std::cout << sp << "index                 : " << (*it)._index << std::endl;
-            std::cout << sp << "autoindex             : " << std::boolalpha << (*it)._autoindex << std::endl;
-            std::cout << sp << "upload_enabled        : " << std::boolalpha << (*it)._upload_enable << std::endl;
-            std::cout << sp << "upload_path           : " << (*it)._upload_path << std::endl;
-            std::cout << sp << "client_max_body_size  : " << (*it)._client_max_body_size << std::endl;
-            std::cout << sp << "cgi_extension         : " << (*it)._cgi_extension << std::endl;
+            std::cout << sp << "root                   : " << (*it)._root << std::endl;
+            std::cout << sp << "index                  : " << (*it)._index << std::endl;
+            std::cout << sp << "autoindex              : " << std::boolalpha << (*it)._autoindex << std::endl;
+            std::cout << sp << "upload_enabled         : " << std::boolalpha << (*it)._upload_enable << std::endl;
+            std::cout << sp << "upload_path            : " << (*it)._upload_path << std::endl;
+            std::cout << sp << "client_max_body_size   : " << (*it)._client_max_body_size << std::endl;
+            std::cout << sp << "cgi_extension          : " << (*it)._cgi_extension << std::endl;
+            std::cout << sp << "auth_basic             : " << (*it).auth << std::endl;
+            if ((*it).auth != "off")
+                for (std::list<std::string>::iterator iv = (*it).auth_credentials.begin(); iv != (*it).auth_credentials.end(); ++iv) {
+                    if (iv == (*it).auth_credentials.begin())
+                        std::cout << sp << "auth_basic_credentials : " << *iv << std::endl;
+                    else
+                        std::cout << sp << "           " << *iv << std::endl;
+                }
             for (std::vector<std::string>::iterator iv = (*it)._cgi_path.begin(); iv != (*it)._cgi_path.end(); ++iv)
-                std::cout << sp << "cgi_path              : " << *iv << std::endl;
-            std::cout << sp << "method                :";
+                std::cout << sp << "cgi_path               : " << *iv << std::endl;
+            std::cout << sp << "method                 :";
             for (std::vector<std::string>::iterator iv = (*it)._method.begin(); iv != (*it)._method.end(); ++iv)
                 std::cout << " " << *iv;
             std::cout << std::endl;

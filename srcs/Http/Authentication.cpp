@@ -3,12 +3,6 @@
 namespace Webserv {
 namespace Http {
 
-std::list<std::string> load_credentials_from_file (const std::string& filepath)
-{
-    std::string s = Utils::get_file_content(filepath);
-    return Utils::split(s, "\n");
-}
-
 bool credentials_are_valid (const std::string& auth_header_value, const std::list<std::string>& credentials)
 {
     size_t i = auth_header_value.find(SP);

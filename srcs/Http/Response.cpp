@@ -9,8 +9,9 @@ void Response::fill_with_error (const std::string& status_code, const Configurat
     if (server != NULL) {
         std::map<int, std::string>::const_iterator it = server->_error_pages.find(Utils::atoi(status_code));
         if (it != server->_error_pages.end())
-            _body = Utils::get_file_content(it->second);
+            _body = Files::get_file_content(it->second);
     }
+    _headers["Connnection"] = "close";
 }
 
 void Response::build_raw_packet (void)

@@ -1,7 +1,7 @@
 #include "Files.hpp"
 
 namespace Webserv {
-namespace Utils {
+namespace Files {
 
 int fill_with_file_content (std::string& s, const std::string& filepath)
 {
@@ -47,5 +47,5 @@ std::string get_directory_listing (const std::string& path)
     return s;
 }
 
-}; // namespace Utils
 }; // namespace Files
+}; // namespace Webserv

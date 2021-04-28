@@ -71,7 +71,7 @@ int    ConnectionManagement::loop_worker()
                 ++connections_loose;
             } else {
                 _s_buffer = std::string(buffer, _nbytes);
-                //Log::out(_id, "reception: " +_s_buffer);
+                Log::out(_id, "reception: " +_s_buffer);
                 response_management(i);
             }
         }

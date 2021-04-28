@@ -11,99 +11,29 @@ void prepare_file()
     }
 }
 
-std::string time_now_to_string(calendar const &now)
-{
-    std::string         res;
-
-    res += ("[" + Utils::itoa(now.years));
-    if (now.days < 10)
-        res += "0";
-    res += Utils::itoa(now.days);
-    if (now.months < 10)
-        res += "0";
-    res += Utils::itoa(now.months);
-    if (now.hours < 10)
-        res += "0";
-    res += Utils::itoa(now.hours);
-    if (now.min < 10)
-        res += "0";
-    res += Utils::itoa(now.min);
-    if (now.sec < 10)
-        res += "0";
-    res += Utils::itoa(now.sec);
-    // res += Utils::itoa(now.msec);
-    res += "]";
-    return res;
-}
-
-std::string get_time_infos()
-{
-    calendar    now;
-
-    gettimeofday(&_current_time, NULL);
-    _current_time.tv_sec -= 1609459200; //Start at 1st January 2021
-    for (now.years = 2021; ; ++now.years)
-    {
-        if (now.years % 4){ // not a leap year
-            if (_current_time.tv_sec - 31536000 > 0){
-                _current_time.tv_sec -= 31536000;
-            } else {
-                break;
-            }
-        } else if (_current_time.tv_sec - 31622400 > 0) {
-                _current_time.tv_sec -= 31622400;
-        } else {
-            break;
-        }
-    }
-    for (now.months = 1; ; ++now.months)
-    {
-        if (now.months == 2) { // February
-            if (_current_time.tv_sec - sec_in_a_month[now.months - 1] - (now.years % 4 ? 0 : 86400) > 0) {
-                _current_time.tv_sec -= sec_in_a_month[now.months - 1] - (now.years % 4 ? 0 : 86400);
-            } else {
-                break;
-            }
-        } else if (_current_time.tv_sec - sec_in_a_month[now.months - 1] > 0) {
-            _current_time.tv_sec -= sec_in_a_month[now.months - 1];
-        } else {
-            break;
-        }
-    }
-    for (now.days = 1; _current_time.tv_sec - 86400 > 0; ++now.days)
-        _current_time.tv_sec -= 86400;
-    for (now.hours = 0; _current_time.tv_sec - 3600 > 0; ++now.hours)
-        _current_time.tv_sec -= 3600;
-    for (now.min = 0; _current_time.tv_sec - 60 > 0; ++now.min)
-        _current_time.tv_sec -= 60;
-    now.sec = _current_time.tv_sec;
-    now.msec = _current_time.tv_usec / 1000;
-    return (time_now_to_string(now));
-}
-
 void out(std::string const &server_name, std::string const &str)
 {
+    if (fd == -1)
+        return ;
     int width;
-    if (fd != -1){
-        std::string     res(get_time_infos());
-        if (server_name.size())
-            res += ("[" + server_name + "] ");
-        width = res.length() + 1;
-        //res += (" " + str);
-        for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
-            if (*it != '\r')
-                res.push_back(*it);
-        }
-        for (size_t i = 1; i < res.length() - 1; ++i) {
-            if (res[i - 1] == '\n') {
-                res.insert(i, width, ' ');
-                i += width;
-            }
-        }
-        if (str[str.length() - 1] != '\n')
-            res += "|\n";
-        write(fd, res.c_str(), res.length());
+    std::string res (Time::get_date_logger_format());
+    if (!server_name.empty())
+        res += ("[" + server_name + "] ");
+    width = res.length() + 1;
+    //res += (" " + str);
+    for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
+        if (*it != '\r')
+            res.push_back(*it);
     }
+    for (size_t i = 1; i < res.length() - 1; ++i) {
+        if (res[i - 1] == '\n') {
+            res.insert(i, width, ' ');
+            i += width;
+        }
+    }
+    if (str[str.length() - 1] != '\n')
+        res += "|\n";
+    write(fd, res.c_str(), res.length());
 }
 
 };

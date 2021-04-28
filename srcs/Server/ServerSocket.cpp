@@ -15,12 +15,12 @@ int ServerSocket::set_socket_fd(const std::string& ip_address, int port)
         return -1;
     }
 
-	int opt = 1;
-	if (setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-		strerror(errno);
-		close(_socket_fd);
+    int opt = 1;
+    if (setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
+        strerror(errno);
+        close(_socket_fd);
         return -1;
-	}
+    }
 
     struct sockaddr_in sock_addr;
     sock_addr.sin_family = AF_INET;

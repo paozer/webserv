@@ -5,6 +5,7 @@ class Configuration {};
 
 #include "Parsing.hpp"
 #include "../Utils/Logger.hpp"
+#include "../Utils/Files.hpp"
 
 #include <map>
 #include <vector>
@@ -17,7 +18,9 @@ static std::string allowed_location[] = {
    "cgi_path",                  "index",
    "method",                    "autoindex",
    "client_max_body_size",      "upload_enable",
-   "upload_path",               ""
+   "auth_basic",                "auth_basic_user_file",
+   "upload_path",
+   ""
 };
 
 class Configuration
@@ -38,6 +41,9 @@ class Configuration
             std::pair<int, std::string>     _listen;
             std::map<int, std::string>      _error_pages;
             std::vector<struct location>    _locations;
+            std::string                     auth;
+            std::string                     auth_path;
+            //std::list<std::string>          auth_credentials;
         };
 
         struct location
@@ -53,6 +59,9 @@ class Configuration
             std::vector<std::string>        _cgi_path;
             std::vector<std::string>        _method;
             bool                            _set_auto_index;
+            std::string                     auth;
+            std::string                     auth_path;
+            std::list<std::string>          auth_credentials;
         };
 
         struct default_conf
@@ -67,6 +76,8 @@ class Configuration
         int             max_connections_workers;
         bool            print_conf;
         default_conf    def_conf;
+        std::string     auth;
+        std::string     auth_path;
 
     public:
         void                            parse(std::string const &file);
@@ -78,8 +89,9 @@ class Configuration
     private:
         void                            set_default(std::list<std::string> &conf);
         void                            complete_config(Configuration::server &serv);
+        //void                            complete_location(Configuration::location &loc);
+        void                            complete_location(Configuration::location &loc, Configuration::server &server);
         void                            load_config(std::list<std::string> &conf);
-        void                            complete_location(Configuration::location &loc);
         struct location                 load_location(std::list<std::string>::iterator &it);
 
         std::vector<struct server>      _servers;

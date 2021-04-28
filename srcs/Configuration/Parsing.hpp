@@ -16,6 +16,7 @@
 
 namespace Webserv {
 namespace Parsing {
+
 /*
 **  MODIFY allowed_methods[] and allowed_line_start[]
 **  to accept new configuration in block
@@ -37,14 +38,15 @@ static std::string allowed_line_start[] = {
     "method",               "server_name",          "error_page",
     "upload_path",          "upload_enable",        "server",
     "nb_workers",           "print_configuration",  "workers_max_connections",
-    "log_enabled",
+    "log_enabled",          "auth_basic",           "auth_basic_user_file",
     ""
 };
 
 static std::string allowed_line_out[] = {
     "server",               "log_enabled",          "#",
     "nb_workers",           "print_configuration",  "workers_max_connections",
-    "\n",                   ""
+    "auth_basic",           "auth_basic_user_file", "\n",
+    ""
 };
 
 class ParsingException : public std::exception

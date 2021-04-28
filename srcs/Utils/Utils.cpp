@@ -96,9 +96,13 @@ std::list<std::string> split (const std::string& s, const std::string& delimiter
     std::list<std::string> ret;
     while (true) {
         j = s.find(delimiter, i);
-        ret.push_back(s.substr(i, j - i - 1));
-        if (j == std::string::npos)
+        
+        if (j == std::string::npos) {
+            ret.push_back(s.substr(i, j - i - 1));
             break ;
+        } else {
+            ret.push_back(s.substr(i, j - i));
+        }
         i = j + 1;
     }
     return ret;

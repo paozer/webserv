@@ -57,8 +57,8 @@ int     count_block(std::string const &file, bool &new_serv)
 {
     int     count = 0;
 
-    for (int i = 0; file[i] && file[i] != '\n'; ++i)
-        if (file[i] == '{'){
+    for (int i = 0; file[i] && file[i] != '\n'; ++i) {
+        if (file[i] == '{') {
             if (new_serv){
                 new_serv = false;
             } else {
@@ -67,6 +67,7 @@ int     count_block(std::string const &file, bool &new_serv)
         } else if (file[i] == '}') {
             --count;
         }
+    }
     return count;
 }
 

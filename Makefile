@@ -16,6 +16,7 @@ SRCS 	=	srcs/main.cpp\
 			srcs/Server/ServerSocket.cpp\
 			srcs/Server/Worker.cpp\
 			srcs/Utils/Files.cpp\
+			srcs/Utils/Time.cpp\
 			srcs/Utils/Logger.cpp\
 			srcs/Utils/Utils.cpp
 
@@ -28,7 +29,7 @@ INCS	= $($(filter-out srcs/main.cpp, $(SRCS)):.cpp=.hpp)
 INCS	:= $(addsuffix srcs/Http/Http.hpp, $(INCS))
 
 CC		=	clang++
-CFLAGS	=	-fsanitize=address -g3 -Wall -Wextra -std=c++11
+CFLAGS	=	-g3 -Wall -Wextra -std=c++11
 UT_CFLAGS =	-fsanitize=address -g3 -Wall -Wextra -std=c++11
 
 

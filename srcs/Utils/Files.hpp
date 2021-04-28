@@ -9,13 +9,13 @@
 #include <string>
 
 namespace Webserv {
-namespace Utils {
+namespace Files {
 
 std::string get_directory_listing (const std::string& path);
 std::string get_file_content (const std::string& filepath);
 int fill_with_file_content (std::string& s, const std::string& filepath);
 
+}; // namespace Files
 }; // namespace Webserv
-}; // namespace Utils
 
 #endif
