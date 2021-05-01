@@ -3,6 +3,22 @@
 namespace Webserv {
 namespace Utils {
 
+int atoi(const std::string& s)
+{
+    size_t i = 0;
+    while (i < s.length() && is_whitespace(s[i]))
+        ++i;
+    int sign = 1;
+    if (i < s.length() && s[i] == '-') {
+        sign *= -1;
+        ++i;
+    }
+    int nb = 0;
+    for (; i < s.length() && s[i] >= '0' && s[i] <= '9'; ++i)
+        nb = nb * 10 + s[i] - '0';
+    return nb * sign;
+}
+
 int atoi_base(const std::string &s, const std::string& base)
 {
     if (s.empty())
@@ -22,23 +38,7 @@ int atoi_base(const std::string &s, const std::string& base)
     return n;
 }
 
-int atoi(const std::string& s)
-{
-    size_t i = 0;
-    while (i < s.length() && is_whitespace(s[i]))
-        ++i;
-    int sign = 1;
-    if (i < s.length() && s[i] == '-') {
-        sign *= -1;
-        ++i;
-    }
-    int nb = 0;
-    for (; i < s.length() && s[i] >= '0' && s[i] <= '9'; ++i)
-        nb = nb * 10 + s[i] - '0';
-    return nb * sign;
-}
-
-std::string itoa(int n)
+std::string itoa (int n)
 {
     long int        nb = n;
     int             length = 1;
@@ -96,7 +96,6 @@ std::list<std::string> split (const std::string& s, const std::string& delimiter
     std::list<std::string> ret;
     while (true) {
         j = s.find(delimiter, i);
-        
         if (j == std::string::npos) {
             ret.push_back(s.substr(i, j - i - 1));
             break ;

@@ -3,43 +3,39 @@
 namespace Webserv {
 namespace Http {
 
-void ChunkedBody::decode (std::string& chunk, size_t max_client_body_size)
+ChunkedBody::ChunkedBody  (void)
+    : curr_chunk_size(-1), state(Incomplete)
 {
-    size_t i = 0;
-    int chunk_size = 0;
-    while (true) {
-        i = chunk.find(CRLF);
-        if (i == std::string::npos || chunk.rfind(CRLF) == i) {
-            _state = Incomplete;
-            return ;
-        }
-        if (i != chunk.find_first_of(CRLF)) {
-            _state = Error;
-            return ;
-        }
-        chunk_size = Utils::atoi_base(chunk.substr(0, chunk.find_first_of(";" + CRLF)));
-        if (chunk_size < 0) {
-            _state = Error;
-            return ;
-        } else if (chunk_size > 0) {
-            if (chunk.length() < chunk_size + i + 4) {
-                _state = Incomplete;
+}
+
+void ChunkedBody::decode (std::string& chunk)
+{
+    size_t i;
+    while (!chunk.empty()) {
+        if (curr_chunk_size == -1) {
+            i = chunk.find(CRLF);
+            if (i == std::string::npos || i != chunk.find_first_of(CRLF))
+                return ;
+            curr_chunk_size = Utils::atoi_base(chunk.substr(0, chunk.find_first_of(CRLF + ";")));
+            curr_chunk_size += 2 * (curr_chunk_size > 0);
+            chunk.erase(0, i + 2);
+            if (curr_chunk_size < 0) {
+                state = Error;
                 return ;
             }
-            if (_body.length() + chunk_size > max_client_body_size)
-                throw InvalidPacketException("413", "client body size too large");
-            chunk.erase(0, i + 2);
-            _body += chunk.substr(0, chunk_size);
-            chunk.erase(0, chunk_size + 2);
+        } else if (curr_chunk_size > 0) {
+            if (curr_chunk_size > 2)
+                body += chunk.substr(0, curr_chunk_size - 2);
+            i = curr_chunk_size;
+            curr_chunk_size -= std::min(chunk.length(), static_cast<size_t>(curr_chunk_size));
+            curr_chunk_size -= 1 * (curr_chunk_size == 0);
+            chunk.erase(0, i);
+        } else if (curr_chunk_size == 0) {
+            if ((i = chunk.find(CRLF)) == 0)
+                state = Complete;
+            return ;
         } else {
-            if (chunk.rfind(CRLF) == i) {
-                _state = Incomplete;
-                return ;
-            }
-            chunk.erase(0, i + 2);
-            _state = Complete;
-            _trailer_part = chunk;
-            return ;
+            assert(false);
         }
     }
 }

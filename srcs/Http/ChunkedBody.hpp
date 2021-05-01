@@ -4,21 +4,25 @@
 #include "Http.hpp"
 
 #include <string>
+#include <algorithm>
 
 namespace Webserv {
 namespace Http {
 
 class ChunkedBody {
     public:
-        void decode (std::string& chunk, size_t max_client_body_size);
-        inline const std::string& get_body (void) const { return _body; }
-        inline const std::string& get_trailer_part (void) const { return _trailer_part; }
-        inline const State& get_state (void) const { return _state; }
+        ChunkedBody (void);
+        void decode (std::string& chunk);
+        inline const std::string& get_body (void) const { return body; }
+        inline const std::string& get_trailer_part (void) const { return trailer_part; }
+        inline const State& get_state (void) const { return state; }
 
     private:
-        std::string _body;
-        std::string _trailer_part;
-        State _state;
+        std::string body;
+        std::string trailer_part;
+
+        ssize_t curr_chunk_size;
+        State state;
 
 }; // class ChunkedBody
 

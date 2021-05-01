@@ -20,7 +20,6 @@ void out(std::string const &server_name, std::string const &str)
     if (!server_name.empty())
         res += ("[" + server_name + "] ");
     width = res.length() + 1;
-    //res += (" " + str);
     for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
         if (*it != '\r')
             res.push_back(*it);
@@ -32,7 +31,7 @@ void out(std::string const &server_name, std::string const &str)
         }
     }
     if (str[str.length() - 1] != '\n')
-        res += "|\n";
+        res += "\n";
     write(fd, res.c_str(), res.length());
 }
 

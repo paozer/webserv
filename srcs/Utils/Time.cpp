@@ -3,28 +3,57 @@
 namespace Webserv {
 namespace Time {
 
-std::string get_date_header_format (void)
+time_t get_now_time (void)
 {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec;
+}
+
+std::string get_total_time (const std::string& msg, long start)
+{
+    struct timeval tv;
+    tv.tv_sec = get_now_time() + 1609459200 - 7200 - start;
+    tv.tv_usec = 0;
     struct tm t;
-    set_tm_structure(t);
+    set_tm_structure(t, tv);
+    char buf[50];
+    strftime(buf, sizeof(buf), "%T", &t);
+    return msg + std::string(buf);
+}
+
+std::string get_http_formatted_date (time_t time)
+{
+    struct timeval tv;
+    tv.tv_sec = time;
+    tv.tv_usec = 0;
+    struct tm t;
+    set_tm_structure(t, tv);
+
     char buf[50];
     strftime(buf, sizeof(buf), "%a, %d %b %Y %T GMT+2", &t);
     return std::string(buf);
 }
 
+std::string get_http_formatted_now (void)
+{
+    return get_http_formatted_date(get_now_time());
+}
+
 std::string get_date_logger_format (void)
 {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
     struct tm t;
-    set_tm_structure(t);
+    set_tm_structure(t, tv);
+
     char buf[50];
     strftime(buf, sizeof(buf), "[%Y%d%m%H%M%S]", &t);
     return std::string(buf);
 }
 
-void set_tm_structure (struct tm &c)
+void set_tm_structure (struct tm &c, struct timeval &tv)
 {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
     tv.tv_sec -= 1609459200; // Start at 1st January 2021
     tv.tv_sec += 7200; // Timezone adjustment
 
@@ -63,6 +92,5 @@ void set_tm_structure (struct tm &c)
     c.tm_yday = 0;
     c.tm_isdst = 0;
 }
-
 };
 };

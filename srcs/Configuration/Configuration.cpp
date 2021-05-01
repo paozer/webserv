@@ -181,7 +181,7 @@ void    Configuration::set_default(std::list<std::string> &conf)
     for (std::list<std::string>::iterator it = conf.begin(); it != conf.end(); ++it)
     {
         tmp = Utils::get_word(*it);
-        if (tmp == "log_enabled") {
+        if (tmp == "log_enabled" && Utils::get_word(*it) == "on") {
             log = true;
             Log::prepare_file();
         } else if (tmp == "nb_workers") {

@@ -2,8 +2,8 @@
 #define TIME_HPP
 
 #include "Utils.hpp"
-#include <string>
 #include <sys/time.h>
+#include <string>
 
 namespace Webserv {
 namespace Time {
@@ -15,9 +15,12 @@ static const int seconds_in_month[] = {
 
 static const int weekday_offset[] = { 5, 6, 0, 1, 2, 3, 4 };
 
-std::string get_date_header_format (void);
 std::string get_date_logger_format (void);
-void set_tm_structure (struct tm &t);
+std::string get_http_formatted_now (void);
+std::string get_http_formatted_date (time_t mtime);
+std::string get_total_time(const std::string& msg, long start);
+time_t get_now_time (void);
+void set_tm_structure (struct tm &c, struct timeval &tv);
 
 }; // namespace Time
 }; // namespace Webserv

@@ -5,10 +5,10 @@ namespace Http {
 
 bool credentials_are_valid (const std::string& auth_header_value, const std::list<std::string>& credentials)
 {
-    size_t i = auth_header_value.find(SP);
+    size_t i = auth_header_value.find(' ');
     if (auth_header_value.compare(0, i, "Basic") != 0)
         return false;
-    i = auth_header_value.find_first_not_of(SP, i); // necessary ?
+    i = auth_header_value.find_first_not_of(' ', i); // necessary ?
     std::string decoded = base64_decode(auth_header_value.substr(i));
     return std::find(credentials.begin(), credentials.end(), decoded) != credentials.end();
 }
@@ -16,7 +16,7 @@ bool credentials_are_valid (const std::string& auth_header_value, const std::lis
 std::string base64_decode(const std::string& encoded)
 {
     std::string decoded;
-    std::string charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    static const std::string charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int num = 0;
     int count_bits = 0;
 

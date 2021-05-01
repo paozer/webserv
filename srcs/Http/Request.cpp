@@ -4,7 +4,7 @@ namespace Webserv {
 namespace Http {
 
 /* PARSING */
-void Request::append (const std::string& packet, size_t client_max_body_size)
+void Request::append (const std::string& packet)
 {
     _packet.append(packet);
     try {
@@ -16,7 +16,7 @@ void Request::append (const std::string& packet, size_t client_max_body_size)
             parse_headers();
         }
         if (_state == Body) {
-            parse_body(client_max_body_size);
+            parse_body();
         }
         if (_state == Complete) {
             evaluate_request_line();
@@ -57,28 +57,30 @@ void Request::parse_headers (void)
     while ((pos_crlf = _packet.find(CRLF)) != 0 && pos_crlf != std::string::npos) {
         if (pos_crlf < (j = _packet.find(":")) || j == std::string::npos)
             throw InvalidPacketException("400", "expected new header but got something else");
+        if (pos_crlf != _packet.find_first_of(CRLF))
+            throw InvalidPacketException("400", "invalid crlf usage");
         field_name = _packet.substr(0, j);
         i = _packet.find_first_not_of(OWS, j + 1);
         j = _packet.find_last_not_of(OWS + CRLF, pos_crlf);
         _headers[field_name] = _packet.substr(i, j - i + 1);
         _packet.erase(0, pos_crlf + 2);
     }
-    if (_packet.find(CRLF) == 0) {
+    if (pos_crlf == 0) {
         _state = Body;
         _packet.erase(0, 2);
     }
 }
 
-void Request::parse_body (size_t max_client_body_size)
+void Request::parse_body (void)
 {
     if (has_header("Transfer-Encoding")) {
         if (get_header_values("Transfer-Encoding") != "chunked")
             throw InvalidPacketException("501", "unknown transfer encoding");
-        _cb.decode(_packet, max_client_body_size);
+        _cb.decode(_packet);
         if (_cb.get_state() == Complete) {
+            _body = _cb.get_body();
             _state = Complete;
             _headers.erase("Content-Length");
-            _body = _cb.get_body();
         } else if (_cb.get_state() == Error) {
             throw InvalidPacketException("400", "invalid chunked message");
         }
@@ -86,9 +88,12 @@ void Request::parse_body (size_t max_client_body_size)
         int len = Utils::atoi_base(get_header_values("Content-Length"), "0123456789");
         if (len == -1)
             throw InvalidPacketException("400", "invalid content-length");
-        _body = _packet.substr(0, len);
-        if (static_cast<size_t>(len) == _packet.length())
+        _body += _packet;
+        _packet.clear();
+        if (_body.length() == static_cast<size_t>(len))
             _state = Complete;
+        else if (_body.length() > static_cast<size_t>(len))
+            _state = Error;
     } else if (!_packet.empty()){
         throw InvalidPacketException("411", "missing transfer-encoding or content-length");
     } else {
@@ -110,11 +115,12 @@ void Request::evaluate_headers (void) const
     for (HeaderMap::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
         if (it->first.empty())
             throw InvalidPacketException("400", "empty header field-name");
-        for (size_t i = 0; i < it->first.length(); ++i) {
-            if (!TCHARS[static_cast<size_t>(it->first[i])])
-                throw InvalidPacketException("400", "invalid character in header field-name");
-        }
+        if (it->first.find_first_not_of(TCHARS) != std::string::npos)
+            throw InvalidPacketException("400", "invalid character in header field-name");
+        // if (it->second.find_not_of(TCHARS) != std::string::npos)
+        //     throw InvalidPacketException("400", "invalid character in header field-value");
     }
+    // if this check is removed here add it to somwhere along the way
     if (!has_header("Host"))
         throw InvalidPacketException("400", "missing host header");
 }

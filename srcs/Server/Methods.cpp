@@ -4,47 +4,35 @@
 namespace Webserv {
 namespace Methods {
 
-Http::Response create_standard_response (void)
-{
-    Http::Response response;
-    response.set_status_code("200");
-    response.append_header("Date", Time::get_date_header_format());
-    response.append_header("Server", "webserv/1.0");
-    //response.append_header("Retry-After", ""); // TODO set when bouncing clients
-    //response.append_header("Last-Modified", ""); // TODO set for GET / POST / PUT same format as Date
-    //response.append_header("Content-Type", ""); // TODO set for GET using mime types
-    //response.append_header("Location", ""); // TODO set to newly created file when returning 201 from POST/PUT
-    //response.append_header("Content-Location", ""); // TODO set to alternative uri for requested ressource
+//response.append_header("Content-Location", ""); // TODO set to alternative uri for requested ressource
 
-    // TODO if uri maps to different ressources parse their
-    // charset/language and return the most appropriate
-    //response.append_header("Accept-Charsets", "");
-    //response.append_header("Accept-Language", "");
-    //response.append_header("Content-Language", "");
+// TODO if uri maps to different ressources parse their
+// charset/language and return the most appropriate
+//response.append_header("Accept-Charsets", "");
+//response.append_header("Accept-Language", "");
+//response.append_header("Content-Language", "");
 
-    //response.append_header("Allow", ""); // used in OPTIONS method and 405 error
-    //response.append_header("Content-Length", ""); // used for all responses
-    //response.append_header("Host", ""); // used in request routing
-    //response.append_header("Authorization", ""); // used in authentication
-    //response.append_header("WWW-Authenticate", ""); // used for unauthenticated requests
-    //response.append_header("Transfer-Encoding", ""); // used when receiving/sending chunked body
-    //response.append_header("Referer", ""); // this is not useful
-    //response.append_header("User-Agent", ""); // this is not useful
-    return response;
-}
+//AUTHORIZATION used in authentication
+//ALLOW used in OPTIONS and 405 error
+//CONTENT-LENGTH used for all responses
+//CONTENT-TYPE used in GET/POST TODO POST
+//HOST used in request routing
+//TRANSFER-ENCODING used when receiving/sending chunked body
+//LAST-MODIFIED used in GET/PUT when a ressource was created TODO POST
+//LOCATION used in PUT/POST when a ressource was created TODO POST
+//REFERER this is not useful
+//RETRY-AFTER used when bouncing clients
+//USER-AGENT this is not useful
+//WWW-AUTHENTICATE used for unauthenticated requests
 
 Http::Response method_handler (const Http::Request& request, const Configuration& config, int fd)
 {
-    std::string host = request.has_header("host") ? request.get_header_values("host") : "";
-    // ip and port that bind was called with i.e. related to the socket
-
     struct sockaddr_in sin;
     socklen_t len = sizeof(sin);
     getsockname(fd, (struct sockaddr *)&sin, &len);
+    const Configuration::server* server = Routing::select_server(config, Http::inet_ntoa(sin.sin_addr.s_addr), Utils::itoa(Http::mhtons(sin.sin_port)), request.get_header_values("host"));
 
-    // ip and port that bind was called with i.e. related to the socket
-    const Configuration::server* server = Routing::select_server(config, Utils::inet_ntoa(sin.sin_addr.s_addr), Utils::itoa(Utils::m_htons(sin.sin_port)), host);
-    Http::Response response = create_standard_response();
+    Http::Response response = Http::Response::create_standard_response();
     if (request.get_state() == Http::Error) {
         response.fill_with_error(request.get_err_status_code(), server);
         return response;
@@ -74,52 +62,27 @@ Http::Response method_handler (const Http::Request& request, const Configuration
         get(response, filepath, location, server);
     } else if (method == "HEAD") {
         get(response, filepath, location, server);
+        response.set_content_length();
         response.unset_body();
-
     } else if (method == "POST") {
         if (request.get_uri().rfind(location->_cgi_extension) == request.get_uri().size() - location->_cgi_extension.size()) {
+            CgiHandler CgiHandler(request, location);
+            CgiHandler.executeCgi(location->_cgi_path[0], response);
             // Log::out("methods", "cgi called");
-		phpCgi cgi(method, server, location, request, response, filepath);
         } else if (!request.has_header("Content-Range")) {
             response.set_status_code("204");
             response.set_body("");
             // put(response, filepath, location->_upload_enable, request.get_body());
         } else
             response.fill_with_error("400", server);
-
-
     } else if (method == "PUT") {
-        // Log::out("filepath is ", filepath);
-        if (!request.has_header("Content-Range"))
-            put(response, filepath, location->_upload_enable, request.get_body(), server);
-        else
-            response.fill_with_error("400", server);
+        put(request, response, filepath, location, server);
     } else if (method == "DELETE") {
-        delete_method(response, filepath);
+        mdelete(response, filepath, server);
     } else if (method == "OPTIONS") {
         options(response, location);
     }
     return response;
-}
-
-void put (Http::Response& response, const std::string& filepath, bool upload_enabled, const std::string& content, const Configuration::server* server)
-{
-    int fd;
-    if (upload_enabled) {
-        if ((fd = open(filepath.c_str(), O_WRONLY | O_TRUNC)) == -1)
-            response.set_status_code("201");
-        if (fd == -1 && (fd = open(filepath.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644)) == -1) {
-            response.fill_with_error("403", server);
-            return ;
-        }
-    } else {
-        if ((fd = open(filepath.c_str(), O_WRONLY | O_TRUNC)) == -1) {
-            response.fill_with_error("404", server);
-            return ;
-        }
-    }
-    write(fd, content.c_str(), content.size());
-    close(fd);
 }
 
 void get (Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server)
@@ -131,15 +94,13 @@ void get (Http::Response& response, const std::string& filepath, const Configura
             if (stats.st_mode & S_IFDIR) {
                 if (!location->_index.empty()) {
                     std::string s;
-                    if (Files::fill_with_file_content(s, filepath + "/" + location->_index) == -1) {
+                    if (Files::fill_with_file_content(s, filepath + "/" + location->_index) == -1)
                         response.fill_with_error("404", server);
-                    } else {
+                    else
                         response.set_body(s);
-                        // add last-mod
-                    }
                 } else if (location->_autoindex) {
                     response.set_body(Files::get_directory_listing(filepath));
-                    // add last-mod
+                    response.append_header("Content-Type", "text/html");
                 } else {
                     response.fill_with_error("403", server);
                 }
@@ -147,10 +108,13 @@ void get (Http::Response& response, const std::string& filepath, const Configura
                 char buf[stats.st_size];
                 if (read(fd, &buf, stats.st_size) == stats.st_size) {
                     response.set_body(std::string(buf, stats.st_size));
-                    // add last-mod
+                    response.append_header("Content-Type", get_media_type(filepath));
                 } else {
                     response.fill_with_error("403", server);
                 }
+            }
+            if (response.get_status_code() != "403" && response.get_status_code() != "404") {
+                response.append_header("Last-Modified", Time::get_http_formatted_date(stats.st_mtime));
             }
         } else {
             response.fill_with_error("500", server);
@@ -161,25 +125,55 @@ void get (Http::Response& response, const std::string& filepath, const Configura
     }
 }
 
+
+void put (const Http::Request& request, Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server)
+{
+    if (request.has_header("Content-Range")) {
+        response.fill_with_error("400", server);
+        return ;
+    }
+    int fd;
+    if (location->_upload_enable) {
+        if ((fd = open(filepath.c_str(), O_WRONLY | O_TRUNC)) == -1) {
+            response.set_status_code("201");
+        }
+        if (fd == -1 && (fd = open(filepath.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644)) == -1) {
+            response.fill_with_error("403", server);
+            return ;
+        }
+        if (response.get_status_code() == "201") { // if ressource was created
+            response.append_header("Location", request.get_uri()); // TODO is this correct ?
+        } else { // else if it existed previously and it could be opened
+            struct stat st;
+            if (fstat(fd, &st) == 0)
+                response.append_header("Last-Modified", Time::get_http_formatted_date(st.st_mtime));
+        }
+    } else if ((fd = open(filepath.c_str(), O_WRONLY | O_TRUNC)) == -1) {
+        response.fill_with_error("404", server);
+        return ;
+    }
+    write(fd, request.get_body().c_str(), request.get_body().size());
+    close(fd);
+}
+
 void options (Http::Response &response, const Configuration::location *location)
 {
     for (std::vector<std::string>::const_iterator it = location->_method.begin(); it != location->_method.end(); ++it)
         response.append_header("Allow", *it);
 }
 
-// TODO error status code
-void delete_method (Http::Response &response, const std::string &filepath)
+void mdelete (Http::Response &response, const std::string &filepath, const Configuration::server* server)
 {
     int fd;
-    if ((fd = open(filepath.c_str(), O_RDONLY)) > -1) {
-        struct stat stats;
-        if (fstat(fd, &stats) == 0) {
-            if (stats.st_mode & S_IFDIR) {
-                rmdir(filepath.c_str());
-            } else {
-                unlink(filepath.c_str());
-            }
-        }
+    struct stat st;
+    if (stat(filepath.c_str(), &st) == 0 && (fd = open(filepath.c_str(), O_RDONLY)) > -1) {
+        if (st.st_mode & S_IFDIR)
+            rmdir(filepath.c_str());
+        else
+            unlink(filepath.c_str());
+        close(fd);
+    } else {
+        response.fill_with_error("404", server);
     }
 }
 

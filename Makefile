@@ -1,39 +1,39 @@
 ############## VARIABLES ##############
 
-NAME	=	webserv
+NAME		=	webserv
 
-SRCS 	=	srcs/main.cpp\
-			srcs/Cgi/phpCgi.cpp\
-			srcs/Configuration/Configuration.cpp\
-			srcs/Configuration/Parsing.cpp\
-			srcs/Http/Authentication.cpp\
-			srcs/Http/ChunkedBody.cpp\
-			srcs/Http/Request.cpp\
-			srcs/Http/Response.cpp\
-			srcs/Server/ConnectionsManagement.cpp\
-			srcs/Server/Methods.cpp\
-			srcs/Server/Routing.cpp\
-			srcs/Server/ServerManagement.cpp\
-			srcs/Server/ServerSocket.cpp\
-			srcs/Server/Worker.cpp\
-			srcs/Utils/Files.cpp\
-			srcs/Utils/Logger.cpp\
-			srcs/Utils/Time.cpp\
-			srcs/Utils/Utils.cpp\
+SRCS 		=	srcs/main.cpp\
+				srcs/Configuration/Configuration.cpp\
+				srcs/Configuration/Parsing.cpp\
+				srcs/Http/Authentication.cpp\
+				srcs/Http/ChunkedBody.cpp\
+				srcs/Http/Request.cpp\
+				srcs/Http/Response.cpp\
+				srcs/Server/cgi.cpp\
+				srcs/Server/ConnectionsManagement.cpp\
+				srcs/Server/Methods.cpp\
+				srcs/Server/Routing.cpp\
+				srcs/Server/ServerManagement.cpp\
+				srcs/Server/ServerSocket.cpp\
+				srcs/Server/Worker.cpp\
+				srcs/Utils/Files.cpp\
+				srcs/Utils/Logger.cpp\
+				srcs/Utils/Time.cpp\
+				srcs/Utils/Utils.cpp
 
-UT_SRCS =	tests/unit_tests/main.cpp\
-			tests/unit_tests/Methods.cpp\
-			tests/unit_tests/Request.cpp\
-			tests/unit_tests/Response.cpp
+UT_SRCS 	=	tests/unit_tests/main.cpp\
+				tests/unit_tests/Methods.cpp\
+				tests/unit_tests/Request.cpp\
+				tests/unit_tests/Response.cpp
 
-INCS	= $($(filter-out srcs/main.cpp, $(SRCS)):.cpp=.hpp)
-INCS	:= $(addsuffix srcs/Http/Http.hpp, $(INCS))
+INCS		= 	$($(filter-out srcs/main.cpp, $(SRCS)):.cpp=.hpp)
+INCS		:= 	$(addsuffix srcs/Http/Http.hpp, $(INCS))
 
-CC		=	clang++
-CFLAGS	=	-g3 -Wall -Wextra -std=c++98 -lpthread
+CC			=	clang++
+CFLAGS		=	-g3 -Wall -Wextra -std=c++98
+UT_CFLAGS 	=	-Wall -Wextra -std=c++2a
 # CFLAGS	=	-g3 -fsanitize=address -Wall -Wextra -std=c++11
 # UT_CFLAGS =	-fsanitize=address -g3 -Wall -Wextra -std=c++11
-UT_CFLAGS =	-Wall -Wextra -std=c++98
 
 
 ############## RECIPES ##############

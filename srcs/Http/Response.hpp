@@ -2,6 +2,7 @@
 #define HTTP_RESPONSE_HPP
 
 #include "Http.hpp"
+#include "../Server/MediaTypes.hpp"
 #include "../Configuration/Configuration.hpp"
 #include "../Utils/Files.hpp"
 
@@ -13,6 +14,8 @@ class Response
     public:
         void build_raw_packet (void);
         void fill_with_error (const std::string& status_code, const Configuration::server* server);
+        static Response create_standard_response (void);
+
         inline const std::string& get_raw_packet (void) const { return _raw_packet; }
         inline const std::string& get_body (void) const { return _body; }
         inline const std::string& get_status_code (void) const { return _status_code; }
@@ -21,6 +24,13 @@ class Response
         inline void unset_body (void) { _body.clear(); }
         inline void set_content_length (void) { _headers["Content-Length"] = Utils::itoa(_body.length()); }
         void append_header (const std::string& field_name, const std::string& field_value);
+        inline bool should_close (void) const
+        {
+            HeaderMap::const_iterator it = _headers.find("Connection");
+            if (it == _headers.end())
+                return false;
+            return it->second == "close";
+        }
 
     private:
         std::string _status_code;

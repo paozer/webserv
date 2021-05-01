@@ -40,5 +40,16 @@ const Configuration::server* select_server (const Configuration& config, const s
     return &*selected_servers[0];
 }
 
+std::string get_filepath (const Configuration::location* location, const std::string& method, const std::string& uri)
+{
+    std::string filepath;
+    if (method == "PUT" && !location->_upload_path.empty())
+        filepath = location->_upload_path;
+    else
+        filepath = location->_root;
+    filepath += uri.substr(location->_name.length());
+    return filepath;
+}
+
 }; // namespace Webserv
 }; // namespace Routing

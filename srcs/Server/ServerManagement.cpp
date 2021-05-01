@@ -2,26 +2,16 @@
 
 namespace Webserv {
 
-static bool stop_server;
-
-/*                 COMMUNICATION PART                 */
-
-void                signal_handler(int sig)
-{
-    (void)sig;
-    stop_server = true;
-}
-
-/*                      SERVER                       */
-
 Server::Server(Configuration const &config)
      : _nb_worker(0), _configuration(config)
 {
-    ConnectionManagement connections("Server");
+    ConnectionManagement connections("Server", config);
     _connections = connections;
     sockets_settings();
     signal(SIGINT, signal_handler);
     _workers = new worker_config[_configuration.max_workers];
+    total_connections = 0;
+    start_time = Time::get_now_time();
 }
 
 Server::~Server()
@@ -34,16 +24,22 @@ Server::~Server()
     for (int i = 0; i < _nb_worker; ++i)
         pthread_join(_workers[i].th, NULL);
     delete[] _workers;
+    if (!_configuration.max_workers)
+        delete[] _connections._buffer;
     Log::out("Server", "stop");
+    Log::out("", " total connections: " + Utils::itoa(total_connections));
+    Log::out("", Time::get_total_time(" server uptime: ", start_time));
     close(Log::fd);
 }
 
 void    Server::start()
 {
-    if (_configuration.max_workers == 0)
+    if (_configuration.max_workers == 0) {
+        _connections._buffer = new char[100000];
         main_loop_without_workers();
-    else
+    } else {
         main_loop_with_workers();
+    }
 }
 
 void    Server::sockets_settings()
@@ -59,6 +55,54 @@ void    Server::sockets_settings()
         FD_SET(_socket.back().get_fd(), &_connections._read_fds);
         if (_socket.back().get_fd() > _connections._max_fd)
             _connections._max_fd = _socket.back().get_fd();
+    }
+}
+
+/*                 SERVER PART                  */
+
+void    Server::main_loop_without_workers()
+{
+    _cli_len = sizeof(_cli_addr);
+    Log::out("Server", "start");
+    while (!stop_server)
+    {
+        _connections._timeout.tv_sec = 0;
+        _connections._timeout.tv_usec = 500;
+        _connections._tmp_read_fds = _connections._read_fds;
+        _connections._tmp_write_fds = _connections._write_fds;
+        select(_connections._max_fd + 1, &_connections._tmp_read_fds, &_connections._tmp_write_fds, NULL, &_connections._timeout);
+        for (size_t i = 0; i < _socket.size(); ++i)
+        {
+            if (FD_ISSET(_socket[i].get_fd(), &_connections._tmp_read_fds)) {
+                _cli_sock = accept(_socket[i].get_fd(), reinterpret_cast<struct sockaddr*>(&_cli_addr), &_cli_len);
+                if (_cli_sock == -1) {
+                    Log::out("Server", "new connection error");
+                } else {
+                    FD_SET(_cli_sock, &_connections._read_fds);
+                    FD_SET(_cli_sock, &_connections._write_fds);
+                    _connections._max_fd = std::max(_connections._max_fd, _cli_sock);
+                    ++total_connections;
+                    Log::out("Server", "new connection");
+                }
+            }
+        }
+        _connections.loop_server(_socket);
+    }
+}
+
+void    Server::main_loop_with_workers()
+{
+    fd_set tmp_socket;
+    Log::out("Server", "start");
+    while (!stop_server)
+    {
+        tmp_socket = _connections._read_fds;
+        select(_connections._max_fd + 1, &tmp_socket, NULL, NULL, NULL);
+        for (size_t i = 0; i < _socket.size(); ++i)
+            if (FD_ISSET(_socket[i].get_fd(), &tmp_socket)) {
+                new_worker(Utils::itoa(_socket[i].get_fd()));
+                FD_CLR(_socket[i].get_fd(), &tmp_socket);
+            }
     }
 }
 
@@ -84,30 +128,38 @@ void Server::new_worker(std::string const &socket_details)
         _workers[_nb_worker].tmp_connections = Utils::atoi(socket_details);
         _workers[_nb_worker].conf = _configuration;
         pthread_create(&_workers[_nb_worker].th, NULL, launch_worker, &(_workers[_nb_worker]));
-        // pthread_detach(_workers[_nb_worker].th);
+        for (bool state = true; state; )
+        {
+            pthread_mutex_lock(&_workers[_nb_worker].access);
+            state = _workers[_nb_worker].new_connection;
+            pthread_mutex_unlock(&_workers[_nb_worker].access);
+        }
         ++_nb_worker;
+        ++total_connections;
     } else {
-        int which = get_smaller_worker();
-        if (which != -1) {
-            pthread_mutex_lock(&_workers[which].access);
-            _workers[which].new_connection = true;
-            _workers[which].tmp_connections = Utils::atoi(socket_details);
-            pthread_mutex_unlock(&_workers[which].access);
-            for (bool state = true; !state;) {
-                pthread_mutex_lock(&_workers[which].access);
-                state = _workers[which].new_connection;
-                pthread_mutex_unlock(&_workers[which].access);
+        int i = get_available_worker();
+        if (i != -1) {
+            pthread_mutex_lock(&_workers[i].access);
+            _workers[i].new_connection = true;
+            _workers[i].tmp_connections = Utils::atoi(socket_details);
+            pthread_mutex_unlock(&_workers[i].access);
+            for (bool state = true; state; )
+            {
+                pthread_mutex_lock(&_workers[i].access);
+                state = _workers[i].new_connection;
+                pthread_mutex_unlock(&_workers[i].access);
             }
+            ++total_connections;
         } else {
             refused_connection(socket_details);
         }
     }
 }
 
-int Server::get_smaller_worker()
+int Server::get_available_worker()
 {
-    int     smaller_id;
-    int     smaller_nb = INT_MAX;
+    int smaller_id;
+    int smaller_nb = INT_MAX;
 
     for (int i = 0; i < _configuration.max_workers; ++i){
         pthread_mutex_lock(&_workers[i].access);
@@ -120,59 +172,10 @@ int Server::get_smaller_worker()
     return smaller_nb < _configuration.max_connections_workers ? smaller_id : -1;
 }
 
-/*                 SERVER PART                  */
-
-void    Server::main_loop_without_workers()
+void signal_handler(int sig)
 {
-    _cli_len = sizeof(_cli_addr);
-    Log::out("Server", "start");
-    _connections._config = _configuration;
-    while (!stop_server)
-    {
-        _connections._tv.tv_sec = 0;
-        _connections._tv.tv_usec = 500;
-        _connections._tmp_read_fds = _connections._read_fds;
-        _connections._tmp_write_fds = _connections._write_fds;
-        select(_connections._max_fd + 1, &_connections._tmp_read_fds, &_connections._tmp_write_fds, NULL, &_connections._tv);
-        for (size_t i = 0; i < _socket.size(); ++i)
-        {
-            if (FD_ISSET(_socket[i].get_fd(), &_connections._tmp_read_fds)) {
-                _cli_sock = accept(_socket[i].get_fd(), reinterpret_cast<struct sockaddr*>(&_cli_addr), &_cli_len);
-                if (_cli_sock == -1) {
-                    Log::out("Server", "new connection error");
-                } else {
-                    FD_SET(_cli_sock, &_connections._read_fds);
-                    FD_SET(_cli_sock, &_connections._write_fds);
-                    _connections._max_fd = std::max(_connections._max_fd, _cli_sock);
-                    Log::out("Server", "new connection");
-                }
-            }
-        }
-        _connections.loop_server(_socket);
-    }
-}
-
-void    Server::main_loop_with_workers()
-{
-    fd_set      serv_socket;
-    fd_set      tmp_socket;
-
-    serv_socket = _connections._read_fds;
-    FD_ZERO(&_connections._read_fds);
-    Log::out("Server", "start");
-    while (!stop_server)
-    {
-        tmp_socket = serv_socket;
-        select(_connections._max_fd + 1, &tmp_socket, NULL, NULL, NULL);
-        for (size_t i = 0; i < _socket.size(); ++i)
-        {
-            if (FD_ISSET(_socket[i].get_fd(), &tmp_socket)){
-                new_worker(Utils::itoa(_socket[i].get_fd()));
-                FD_CLR(_socket[i].get_fd(), &tmp_socket);
-            }
-        }
-            // sleep(1);
-    }
+    (void)sig;
+    stop_server = true;
 }
 
 };

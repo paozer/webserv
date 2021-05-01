@@ -15,6 +15,18 @@
 namespace Webserv {
 namespace Http {
 
+inline uint16_t mhtons(uint16_t v) { return (v >> 8) | (v << 8); }
+
+inline std::string inet_ntoa (unsigned int s_addr)
+{
+    unsigned char bytes[4];
+    bytes[0] = s_addr & 0xFF;
+    bytes[1] = (s_addr >> 8) & 0xFF;
+    bytes[2] = (s_addr >> 16) & 0xFF;
+    bytes[3] = (s_addr >> 24) & 0xFF;
+    return std::string(Utils::itoa(bytes[0]) + "." + Utils::itoa(bytes[1]) + "." + Utils::itoa(bytes[2]) + "." + Utils::itoa(bytes[3]));
+}
+
 enum State
 {
     Complete,
@@ -73,7 +85,7 @@ static StatusCodeMap STATUS_CODES = create_status_codes_map();
 static const std::string SP = " ";
 static const std::string OWS = " \t";
 static const std::string CRLF = "\r\n";
-static const bool TCHARS[] = {false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, true, true, true, true, true, false, false, true, true, false, true, true, false, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, true, false, true, false, false};
+static const std::string TCHARS = "!#%'*+-.^_`|~0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 inline StatusCodeMap create_status_codes_map (void)
 {
