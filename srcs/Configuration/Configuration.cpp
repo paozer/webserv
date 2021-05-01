@@ -65,7 +65,9 @@ Configuration::location    Configuration::load_location(std::list<std::string>::
             while (!(*it).empty())
                 new_loc._method.push_back(Utils::get_word(*it));
         } else if (key == "auth_basic") {
-            new_loc.auth = Utils::get_word(*it);
+            int start = (*it).find_first_of('\"') + 1;
+            new_loc.auth = (*it).substr(start, (*it).length() - 2);
+            (*it).clear();
         } else if (key == "auth_basic_user_file") {
             new_loc.auth_path = Utils::get_word(*it);
         }
@@ -98,7 +100,9 @@ void    Configuration::load_config(std::list<std::string> &conf)
         } else if (cmp == "root") {
             new_serv._root = Utils::get_word(*it);
         } else if (cmp == "auth_basic") {
-            new_serv.auth = Utils::get_word(*it);
+            int start = (*it).find_first_of('\"') + 1;
+            new_serv.auth = (*it).substr(start, (*it).length() - 2);
+            (*it).clear();
         } else if (cmp == "auth_basic_user_file") {
             new_serv.auth_path = Utils::get_word(*it);
         } else if (cmp == "location") {

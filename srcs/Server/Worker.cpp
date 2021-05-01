@@ -24,11 +24,11 @@ Worker::Worker(worker_config *w)
 
 Worker::~Worker()
 {
+    Log::out(_id, "ciao!");
     pthread_mutex_unlock(&_w_conf->access);
     pthread_mutex_destroy(&_w_conf->access);
     FD_ZERO(&_connections._read_fds);
     FD_ZERO(&_connections._write_fds);
-    Log::out(_id, "ciao!");
 }
 
 /*                 MAIN PART                  */

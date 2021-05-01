@@ -57,7 +57,7 @@ int    ConnectionManagement::loop_worker()
     int         connections_loose = 0;
 
     _tv.tv_sec = 0;
-    _tv.tv_usec = 500;
+    _tv.tv_usec = 200;
     _tmp_read_fds = _read_fds;
     _tmp_write_fds = _write_fds;
     select(_max_fd + 1, &_tmp_read_fds, &_tmp_write_fds, NULL, &_tv);

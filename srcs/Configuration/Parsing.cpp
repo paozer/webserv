@@ -119,6 +119,18 @@ bool    valid_methods(std::string line)
     return true;
 }
 
+bool    check_auth(std::string &line)
+{
+    int i = line.find_first_of(' ') + 1;
+    int j = line.length() - 1;
+    if (line[i++] != '\"' || line[j] != '\"')
+        return false;
+    for (; i < j; ++i)
+        if (!(line[i] > 31) * (line[i] < 123))
+            return false;
+    return true;
+}
+
 bool    valid_line(std::string &line)
 {
     int     space = 0;
@@ -134,6 +146,8 @@ bool    valid_line(std::string &line)
         return  space == 2 ;
     if (line.length() == 1 && (line == "}" || line == "{"))
         return !space;
+    if (compare_first_word("auth_basic", line))
+        return check_auth(line);
     return space == 1;
 }
 

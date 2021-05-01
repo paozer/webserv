@@ -28,7 +28,7 @@ Server::~Server()
 {
     for (int i = 0; i < _nb_worker; ++i) {
         pthread_mutex_lock(&_workers[i].access);
-        _workers[i].stop = false;
+        _workers[i].stop = true;
         pthread_mutex_unlock(&_workers[i].access);
     }
     for (int i = 0; i < _nb_worker; ++i)
