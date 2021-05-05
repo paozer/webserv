@@ -42,12 +42,10 @@ class Server
         worker_config           *_workers;
         std::vector<ServerSocket>  _socket;
 
-        struct sockaddr_in      _cli_addr;
-        unsigned int            _cli_len;
         int                     _cli_sock;
 
         int                     total_connections;
-        time_t                    start_time;
+        time_t                  start_time;
 
         void                    main_loop_with_workers();
         void                    main_loop_without_workers();

@@ -10,8 +10,10 @@ void    check_blocks(std::string const &line)
 
     for (size_t i = 0; i < line.size(); ++i)
     {
-        if (line[i] == '{' || line[i] == '}')
-            line[i] == '{' ? ++left : ++right;
+        if (line[i] == '{')
+            ++left;
+        else if (line[i] == '}')
+            ++right;
         if (left - right < 0)
             throw ParsingException(0, "Bad indentation.");
     }
@@ -59,7 +61,7 @@ int     count_block(std::string const &file, bool &new_serv)
 
     for (int i = 0; file[i] && file[i] != '\n'; ++i) {
         if (file[i] == '{') {
-            if (new_serv){
+            if (new_serv) {
                 new_serv = false;
             } else {
                 ++count;
@@ -75,10 +77,10 @@ void    adjust_block(std::list<std::string> &serv)
 {
     for (std::list<std::string>::iterator it = serv.begin(); it != serv.end(); ++it)
     {
-        for (int idx = 0; (*it)[idx]; ++idx){
+        for (int idx = 0; (*it)[idx]; ++idx) {
             if (idx == 0)
                 continue ;
-            if ((*it)[idx] == '{' || (*it)[idx] == '}'){
+            if ((*it)[idx] == '{' || (*it)[idx] == '}') {
                 serv.insert(++it, (*--it).substr(idx, std::string::npos));
                 (*it).erase(Utils::is_whitespace((*it)[idx]) ? idx - 1 : idx);
                 break ;
@@ -91,35 +93,36 @@ bool    valid_methods(std::string line)
 {
     size_t          pos;
     std::string     tmp;
-    bool            find;
+    bool            found;
 
     line.erase(0, 7);
     if (line.empty())
         return false;
     while (!line.empty())
     {
-        find = false;
+        found = false;
         pos = line.find_first_of(' ');
-        if (pos == std::string::npos){
+        if (pos == std::string::npos) {
             tmp = line;
             line.clear();
         } else {
             tmp = line.substr(0, pos);
             line.erase(0, pos + 1);
         }
-        for (int i = 0; !allowed_methods[i].empty(); ++i)
+        for (int i = 0; !allowed_methods[i].empty(); ++i) {
             if (!tmp.compare(allowed_methods[i])) {
                 if (tmp == "CONNECT" || tmp == "TRACE")
                     throw ConfException(line, tmp + " is not allowed on this server.");
-                find = true;
+                found = true;
             }
-        if (!find)
+        }
+        if (!found)
             return false;
     }
     return true;
 }
 
-bool    check_auth(std::string &line)
+bool    check_auth(const std::string &line)
 {
     int i = line.find_first_of(' ') + 1;
     int j = line.length() - 1;
@@ -157,10 +160,10 @@ void        push_a_line(std::list<std::string> &serv, std::string &line, int nb_
 
     if (!check_line(line))
         throw ParsingException(nb_line, "Unkown expression");
-    if ((pos = line.find_first_of('\n'))){
+    if ((pos = line.find_first_of('\n'))) {
         if (line[0] != '#')
             serv.push_back(line.substr(0, pos));
-            line.erase(0, pos);
+        line.erase(0, pos);
         if (line[0] == '\n')
             line.erase(0, 1);
     } else if (line[0] != '#') {
@@ -181,13 +184,13 @@ bool    parse_line_out_of_blocks(std::list<std::string> &conf, std::string &line
     return false;
 }
 
-std::vector<std::list<std::string> >    parse_file(std::string &file, int fd)
+std::vector<std::list<std::string> >    parse_file(std::string &file)
 {
     std::vector<std::list<std::string> >    res;
+    std::list<std::string>                  out_block;
     size_t                                  line = 1;
     bool                                    new_serv;
 
-    std::list<std::string> out_block;
     res.push_back(out_block);
     while (!file.empty())
     {
@@ -212,29 +215,19 @@ std::vector<std::list<std::string> >    parse_file(std::string &file, int fd)
             throw ParsingException(line, "Unkown expression out of block");
         }
     }
-    close(fd);
     return res;
 }
 
 std::vector<std::list<std::string> >    read_file(std::string const &file)
 {
-    int                         fd;
-    int                         pos;
-    char                        buffer[BUFFER_SIZE + 1];
-    std::string                 line;
-
-    if (file.find(".conf") == std::string::npos)
+    if (file.rfind(".conf") == file.length() - 4)
         throw ParsingException(0, "Need a .conf file.");
-    if ((fd = open(file.c_str(), O_RDONLY)) == -1)
+    std::string line;
+    if (Files::fill_with_file_content(line, file))
         throw ParsingException(0, "Bad config file name.");
-    while ((pos = read(fd, buffer, BUFFER_SIZE)) > 0)
-    {
-        buffer[pos] = 0;
-        line += buffer;
-    }
     Utils::undo_whitespace(line);
     check_blocks(line);
-    return (parse_file(line, fd));
+    return (parse_file(line));
 }
 
 }; //namespace Parsing

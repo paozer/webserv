@@ -1,5 +1,4 @@
 #include "Methods.hpp"
-#include "../Cgi/phpCgi.hpp"
 
 namespace Webserv {
 namespace Methods {
@@ -60,9 +59,9 @@ Http::Response method_handler (const Http::Request& request, const Configuration
     } else if (!method_is_allowed(location, method)) {
         response.fill_with_error("405", server);
     } else if (method == "GET") {
-        get(response, filepath, location, server);
+        get(request, response, filepath, location, server);
     } else if (method == "HEAD") {
-        get(response, filepath, location, server);
+        get(request, response, filepath, location, server);
     } else if (method == "POST") {
         post(request, response, filepath, location, server);
     } else if (method == "PUT") {
@@ -79,9 +78,11 @@ Http::Response method_handler (const Http::Request& request, const Configuration
     return response;
 }
 
-void get (Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server)
+void get (const Http::Request& request, Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server)
 {
     int fd;
+    if (request.has_header("accept-language") || request.has_header("accept-charset"))
+        const_cast<std::string&>(filepath) = ContentNegotiation::selectFile(request, response, filepath);
     if ((fd = open(filepath.c_str(), O_RDONLY)) > -1) {
         struct stat stats;
         if (fstat(fd, &stats) == 0) {
@@ -102,7 +103,11 @@ void get (Http::Response& response, const std::string& filepath, const Configura
                 char buf[stats.st_size];
                 if (read(fd, &buf, stats.st_size) == stats.st_size) {
                     response.set_body(std::string(buf, stats.st_size));
-                    response.append_header("Content-Type", get_media_type(filepath));
+                    // tmp, should be connect with ContentNegotiation in case file has name like: index.html.en
+                    if (get_media_type(filepath) == "application/octet-stream")
+                        response.append_header("Content-Type", "text/html");
+                    else
+                        response.append_header("Content-Type", get_media_type(filepath));
                 } else {
                     response.fill_with_error("403", server);
                 }
@@ -150,8 +155,7 @@ void put (const Http::Request& request, Http::Response& response, const std::str
 void post (const Http::Request& request, Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server)
 {
     if (request.get_uri().rfind(location->_cgi_extension) == request.get_uri().length() - location->_cgi_extension.length()) {
-        CgiHandler CgiHandler(request, location);
-        CgiHandler.executeCgi(location->_cgi_path[0], response);
+        Cgi cgi("POST", server, location, request, response, filepath);
     } else if (!request.has_header("Content-Range")) {
         response.set_body("");
         response.set_status_code("204");

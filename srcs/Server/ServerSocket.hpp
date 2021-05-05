@@ -12,6 +12,8 @@
 #include <errno.h> // errno
 #include <unistd.h> // close
 
+#include <string.h>
+
 namespace Webserv {
 
 class ServerSocket {

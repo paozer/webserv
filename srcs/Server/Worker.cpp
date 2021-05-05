@@ -3,13 +3,13 @@
 namespace Webserv {
 
 Worker::Worker(worker_config *w)
+    : _id ("worker_" + w->id), _connections (ConnectionManagement(_id, w->conf))
 {
     _w_conf = w;
-    _id = "worker_" + _w_conf->id;
-    _connections = ConnectionManagement(_id, _w_conf->conf);
+    //_id = "worker_" + _w_conf->id;
+    //_connections = ConnectionManagement(_id, _w_conf->conf);
     _connections._max_fd = 0;
     _connections._buffer = new char[8192];
-    _cli_len = sizeof(_cli_addr);
     Log::out(_id, "created");
 }
 
@@ -25,12 +25,9 @@ Worker::~Worker()
 
 void    Worker::accept_new_connection()
 {
-    int         new_client_socket;
-
-    new_client_socket = accept(_w_conf->tmp_connections, reinterpret_cast<struct sockaddr*>(&_cli_addr), &_cli_len);
+    int new_client_socket = accept(_w_conf->tmp_connections, NULL, NULL);
     if (new_client_socket == -1 && errno != EAGAIN) {
-        std::string tmp = "new connection error: ";
-        Log::out(_id, tmp + std::strerror(errno));
+        Log::out(_id, std::string("new connection error: ") + std::strerror(errno));
     } else {
         FD_SET(new_client_socket, &_connections._write_fds);
         FD_SET(new_client_socket, &_connections._read_fds);
@@ -47,20 +44,25 @@ void    Worker::worker_routine()
     total_connections = 0;
     FD_ZERO(&_connections._write_fds);
     FD_ZERO(&_connections._read_fds);
-    while(true)
+    _connections.lost_connections_count = 0;
+    bool need_to_sleep;
+    while (true)
     {
         pthread_mutex_lock(&_w_conf->access);
         _w_conf->nb_connections -= _connections.lost_connections_count;
         _connections.lost_connections_count = 0;
         if (_w_conf->stop)
             return ;
-        if (_w_conf->new_connection){
+        if (_w_conf->new_connection) {
             accept_new_connection();
             _w_conf->new_connection = false;
         }
+        need_to_sleep = _w_conf->nb_connections == 0;
         pthread_mutex_unlock(&_w_conf->access);
         if (_connections._max_fd)
             _connections.loop_worker();
+        if (need_to_sleep)
+            usleep(1000000);
     }
 }
 

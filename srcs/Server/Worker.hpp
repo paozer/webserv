@@ -12,6 +12,8 @@
 #include "../Utils/Utils.hpp"
 #include "../Utils/Logger.hpp"
 
+#include <cstring>
+
 namespace Webserv {
 
 struct  worker_config
@@ -33,16 +35,11 @@ class Worker
     public:
         Worker(worker_config *w);
         ~Worker();
-        Worker(const Worker &other);
-        Worker& operator=(const Worker &other);
         void worker_routine();
 
     private:
         std::string             _id;
         std::string             _s_buffer;
-
-        struct sockaddr_in      _cli_addr;
-        unsigned int            _cli_len;
 
         Configuration           _configuration;
         ConnectionManagement    _connections;
@@ -52,8 +49,6 @@ class Worker
         time_t                  start_time;
 
         void                    accept_new_connection();
-        void                    get_new_connection_fd();
-        void                    send_num_connections();
         void                    stop_worker();
         static void             *worker_thread(void *worker);
 };

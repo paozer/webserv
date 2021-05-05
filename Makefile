@@ -3,13 +3,14 @@
 NAME		=	webserv
 
 SRCS 		=	srcs/main.cpp\
+				srcs/Cgi/Cgi.cpp\
 				srcs/Configuration/Configuration.cpp\
 				srcs/Configuration/Parsing.cpp\
 				srcs/Http/Authentication.cpp\
 				srcs/Http/ChunkedBody.cpp\
 				srcs/Http/Request.cpp\
 				srcs/Http/Response.cpp\
-				srcs/Server/cgi.cpp\
+				srcs/Server/ContentNegotiation/ContentNegotiation.cpp\
 				srcs/Server/ConnectionsManagement.cpp\
 				srcs/Server/Methods.cpp\
 				srcs/Server/Routing.cpp\
@@ -30,9 +31,9 @@ INCS		=	$($(filter-out srcs/main.cpp, $(SRCS)):.cpp=.hpp)
 INCS		:=	$(addsuffix srcs/Http/Http.hpp, $(INCS))
 
 CC			=	clang++
-CFLAGS		=	-Wall -Wextra -std=c++98
+CFLAGS		=	-g3 -Wall -Wextra -std=c++98 -lpthread
 UT_CFLAGS 	=	-Wall -Wextra -std=c++11
-#CFLAGS		=	-g3 -fsanitize=address -Wall -Wextra -std=c++98
+# CFLAGS		=	-g3 -fsanitize=address -Wall -Wextra -std=c++98
 #CFLAGS		=	-g3 -fsanitize=thread -Wall -Wextra -std=c++98
 #UT_CFLAGS 	=	-g3 -fsanitize=address -Wall -Wextra -std=c++11
 
@@ -62,6 +63,7 @@ no_unit_tests:	Makefile $(filter-out srcs/main.cpp, $(SRCS)) $(UT_SRCS) $(INCS)
 clean:
 				@rm -rf $(NAME).o
 				@rm -rf $(NAME).dSYM
+				@rm -rf tmp_*
 				@echo "\033[31m > make clean done\033[0m"
 
 fclean:			clean

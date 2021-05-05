@@ -27,8 +27,7 @@ class ConnectionManagement
     public:
         ConnectionManagement();
         ConnectionManagement(std::string const &id, const Configuration &config);
-        ConnectionManagement(ConnectionManagement const &other);
-        ConnectionManagement& operator=(ConnectionManagement const &other);
+
 
         int     loop_worker();
         int     loop_server(std::vector<ServerSocket> const &serv_sock);
@@ -57,7 +56,6 @@ class ConnectionManagement
         private:
             std::string     _s_buffer;
             Configuration   _config;
-            bool            next_step;
 
             struct settings
             {
@@ -65,7 +63,7 @@ class ConnectionManagement
                 {
                 }
 
-                settings (bool close, int off, std::string s)
+                settings (bool close, int off, const std::string& s)
                     : should_close(close), offset(off), response_queue(s)
                 {
                 }

@@ -86,13 +86,13 @@ void    Configuration::load_config(std::list<std::string> &conf)
     for (std::list<std::string>::iterator it = ++conf.begin(); it != conf.end(); ++it)
     {
 
-        if (!(*it).compare("{") || !(*it).compare("}"))
+        if (*it == "{" || *it == "}")
             continue;
         cmp = Utils::get_word(*it);
         if (cmp == "server_name") {
             new_serv._server_name = Utils::get_word(*it);
         } else if (cmp == "error_page") {
-            new_serv._error_pages.insert(std::pair<int, std::string>(Utils::atoi(Utils::get_word(*it)), Utils::get_word(*it)));
+            new_serv._error_pages.insert(std::make_pair(Utils::atoi(Utils::get_word(*it)), Utils::get_word(*it)));
         } else if (cmp == "listen") {
             new_serv._listen = std::make_pair(Utils::atoi(Utils::get_word(*it)), Utils::get_word(*it));
             if (new_serv._listen.second == "localhost")
@@ -150,7 +150,7 @@ void    Configuration::complete_config(Configuration::server &serv)
     if (serv._server_name.empty())
         serv._server_name = "webserv";
     if (serv._listen.second.empty())
-        serv._listen = std::pair<int, std::string>(80, "127.0.0.1");
+        serv._listen = std::make_pair(80, "127.0.0.1");
     if (serv._root.empty())
         serv._root = "";
     if (serv.auth.empty())
@@ -193,21 +193,21 @@ void    Configuration::set_default(std::list<std::string> &conf)
             if (max_connections_workers < 0 || max_connections_workers > 1024)
                 throw ConfException("workers's connections", "must be > 0 and <= 1024");
         } else if (tmp == "print_configuration") {
-            print_conf = Utils::get_word(*it) == "on" ? true : false;
+            print_conf = Utils::get_word(*it) == "on";
         } else if (tmp == "client_max_body_size") {
             def_conf.client_max_body_size = Utils::atoi(Utils::get_word(*it));
             if (def_conf.client_max_body_size < 0)
                 throw ConfException("client_max_body_size", "must be > 0");
         } else if (tmp == "error_page") {
-            def_conf.error_pages.insert(std::pair<int, std::string>(Utils::atoi(Utils::get_word(*it)), Utils::get_word(*it)));
+            def_conf.error_pages.insert(std::make_pair(Utils::atoi(Utils::get_word(*it)), Utils::get_word(*it)));
         } else if (tmp == "autoindex") {
-            def_conf.auto_idx = Utils::get_word(*it) == "on" ? true : false;
+            def_conf.auto_idx = Utils::get_word(*it) == "on";
         }
     }
     if (max_workers == -1)
-        max_workers = 3;
+        max_workers = 5;
     if (max_connections_workers == -1)
-        max_connections_workers = 100;
+        max_connections_workers = 200;
 }
 
 /***********************************************************************

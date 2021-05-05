@@ -3,10 +3,8 @@
 namespace Webserv {
 
 Server::Server(Configuration const &config)
-     : _nb_worker(0), _configuration(config)
+     : _nb_worker(0), _configuration(config), _connections (ConnectionManagement("Server", config))
 {
-    ConnectionManagement connections("Server", config);
-    _connections = connections;
     sockets_settings();
     signal(SIGINT, signal_handler);
     _workers = new worker_config[_configuration.max_workers];
@@ -61,7 +59,6 @@ void    Server::sockets_settings()
 
 void    Server::main_loop_without_workers()
 {
-    _cli_len = sizeof(_cli_addr);
     Log::out("Server", "start");
     while (!stop_server)
     {
@@ -73,7 +70,7 @@ void    Server::main_loop_without_workers()
         for (size_t i = 0; i < _socket.size(); ++i)
         {
             if (FD_ISSET(_socket[i].get_fd(), &_connections._tmp_read_fds)) {
-                _cli_sock = accept(_socket[i].get_fd(), reinterpret_cast<struct sockaddr*>(&_cli_addr), &_cli_len);
+                _cli_sock = accept(_socket[i].get_fd(), NULL, NULL);
                 if (_cli_sock == -1) {
                     Log::out("Server", "new connection error");
                 } else {
@@ -109,11 +106,8 @@ void    Server::main_loop_with_workers()
 
 void Server::refused_connection(std::string const &socket_details)
 {
-    std::string msg;
-    _cli_len = sizeof(_cli_addr);
-    _cli_sock = accept(Utils::atoi(socket_details), reinterpret_cast<struct sockaddr*>(&_cli_addr), &_cli_len);
-    msg = "connection refused, max is reached\n";
-    send(_cli_sock, msg.c_str(), msg.length(), 0);
+    _cli_sock = accept(Utils::atoi(socket_details), NULL, NULL);
+    send(_cli_sock, "connection refused, max is reached\n", 35, 0);
     close(_cli_sock);
     Log::out("server", "new connection refused, the maximum number of connections is reached");
 }
@@ -126,6 +120,7 @@ void Server::new_worker(std::string const &socket_details)
         _workers[_nb_worker].new_connection = true;
         _workers[_nb_worker].tmp_connections = Utils::atoi(socket_details);
         _workers[_nb_worker].conf = _configuration;
+        _workers[_nb_worker].nb_connections = 0;
         pthread_create(&_workers[_nb_worker].th, NULL, launch_worker, &(_workers[_nb_worker]));
         for (bool state = true; state; )
         {
