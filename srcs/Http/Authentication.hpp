@@ -1,8 +1,9 @@
 #ifndef AUTHENTICATION_HPP
 #define AUTHENTICATION_HPP
 
-#include <string>
+#include <algorithm>
 #include <list>
+#include <string>
 
 namespace Webserv {
 namespace Http {

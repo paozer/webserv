@@ -28,14 +28,14 @@ Server::~Server()
         delete[] _connections._buffer;
     Log::out("Server", "stop");
     Log::out("", " total connections: " + Utils::itoa(total_connections));
-    Log::out("", Time::get_total_time(" server uptime: ", start_time));
+    Log::out("", " server uptime: " + Time::get_total_time(start_time));
     close(Log::fd);
 }
 
 void    Server::start()
 {
     if (_configuration.max_workers == 0) {
-        _connections._buffer = new char[100000];
+        _connections._buffer = new char[8192];
         main_loop_without_workers();
     } else {
         main_loop_with_workers();
@@ -44,7 +44,6 @@ void    Server::start()
 
 void    Server::sockets_settings()
 {
-    _connections._max_fd = -1;
     FD_ZERO(&_connections._write_fds);
     FD_ZERO(&_connections._read_fds);
     for (size_t i = 0; i < _configuration.get_nb_server(); ++i)

@@ -15,8 +15,6 @@
 namespace Webserv {
 namespace Http {
 
-inline uint16_t mhtons(uint16_t v) { return (v >> 8) | (v << 8); }
-
 inline std::string inet_ntoa (unsigned int s_addr)
 {
     unsigned char bytes[4];

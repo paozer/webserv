@@ -30,25 +30,26 @@ Http::Response method_handler (const Http::Request& request, const Configuration
     struct sockaddr_in sin;
     socklen_t len = sizeof(sin);
     getsockname(fd, (struct sockaddr *)&sin, &len);
-    const Configuration::server* server = Routing::select_server(config, Http::inet_ntoa(sin.sin_addr.s_addr), Utils::itoa(Http::mhtons(sin.sin_port)), request.get_header_values("host"));
-
+    const Configuration::server* server = Routing::select_server(config, Http::inet_ntoa(sin.sin_addr.s_addr), Utils::itoa(htons(sin.sin_port)), request.get_header_values("host"));
     Http::Response response = Http::Response::create_standard_response();
+
+    for (int i = 0; i < 1; ++i) { // dodgy for loop
     if (request.get_state() == Http::Error) {
         response.fill_with_error(request.get_err_status_code(), server);
-        return response;
+        break;
     }
     const Configuration::location* location = Routing::select_location(server, request.get_uri());
     if (location == NULL) {
         response.fill_with_error("404", server);
-        return response;
+        break;
     }
 
     if (location->auth != "off") {
         if (!request.has_header("Authorization") ||
                 !Http::credentials_are_valid(request.get_header_values("Authorization"), location->auth_credentials)) {
             response.fill_with_error("401", server);
-            response.append_header("WWW-Authenticate", "Basic");
-            return response;
+            response.append_header("WWW-Authenticate", "Basic realm=\"" + location->auth + "\"");
+            break;
         }
     }
 
@@ -62,19 +63,8 @@ Http::Response method_handler (const Http::Request& request, const Configuration
         get(response, filepath, location, server);
     } else if (method == "HEAD") {
         get(response, filepath, location, server);
-        response.set_content_length();
-        response.unset_body();
     } else if (method == "POST") {
-        if (request.get_uri().rfind(location->_cgi_extension) == request.get_uri().size() - location->_cgi_extension.size()) {
-            CgiHandler CgiHandler(request, location);
-            CgiHandler.executeCgi(location->_cgi_path[0], response);
-            // Log::out("methods", "cgi called");
-        } else if (!request.has_header("Content-Range")) {
-            response.set_status_code("204");
-            response.set_body("");
-            // put(response, filepath, location->_upload_enable, request.get_body());
-        } else
-            response.fill_with_error("400", server);
+        post(request, response, filepath, location, server);
     } else if (method == "PUT") {
         put(request, response, filepath, location, server);
     } else if (method == "DELETE") {
@@ -82,6 +72,10 @@ Http::Response method_handler (const Http::Request& request, const Configuration
     } else if (method == "OPTIONS") {
         options(response, location);
     }
+    } // dodgy for loop
+    response.set_content_length();
+    if (request.get_method() == "HEAD")
+        response.unset_body();
     return response;
 }
 
@@ -99,7 +93,7 @@ void get (Http::Response& response, const std::string& filepath, const Configura
                     else
                         response.set_body(s);
                 } else if (location->_autoindex) {
-                    response.set_body(Files::get_directory_listing(filepath));
+                    response.set_body(Files::get_http_directory_listing(filepath));
                     response.append_header("Content-Type", "text/html");
                 } else {
                     response.fill_with_error("403", server);
@@ -113,9 +107,8 @@ void get (Http::Response& response, const std::string& filepath, const Configura
                     response.fill_with_error("403", server);
                 }
             }
-            if (response.get_status_code() != "403" && response.get_status_code() != "404") {
+            if (response.get_status_code() != "403" && response.get_status_code() != "404")
                 response.append_header("Last-Modified", Time::get_http_formatted_date(stats.st_mtime));
-            }
         } else {
             response.fill_with_error("500", server);
         }
@@ -125,7 +118,6 @@ void get (Http::Response& response, const std::string& filepath, const Configura
     }
 }
 
-
 void put (const Http::Request& request, Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server)
 {
     if (request.has_header("Content-Range")) {
@@ -134,15 +126,14 @@ void put (const Http::Request& request, Http::Response& response, const std::str
     }
     int fd;
     if (location->_upload_enable) {
-        if ((fd = open(filepath.c_str(), O_WRONLY | O_TRUNC)) == -1) {
+        if ((fd = open(filepath.c_str(), O_WRONLY | O_TRUNC)) == -1)
             response.set_status_code("201");
-        }
         if (fd == -1 && (fd = open(filepath.c_str(), O_WRONLY | O_TRUNC | O_CREAT, 0644)) == -1) {
             response.fill_with_error("403", server);
             return ;
         }
         if (response.get_status_code() == "201") { // if ressource was created
-            response.append_header("Location", request.get_uri()); // TODO is this correct ?
+            response.append_header("Location", request.get_uri());
         } else { // else if it existed previously and it could be opened
             struct stat st;
             if (fstat(fd, &st) == 0)
@@ -154,6 +145,20 @@ void put (const Http::Request& request, Http::Response& response, const std::str
     }
     write(fd, request.get_body().c_str(), request.get_body().size());
     close(fd);
+}
+
+void post (const Http::Request& request, Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server)
+{
+    if (request.get_uri().rfind(location->_cgi_extension) == request.get_uri().length() - location->_cgi_extension.length()) {
+        CgiHandler CgiHandler(request, location);
+        CgiHandler.executeCgi(location->_cgi_path[0], response);
+    } else if (!request.has_header("Content-Range")) {
+        response.set_body("");
+        response.set_status_code("204");
+    } else {
+        response.fill_with_error("400", server);
+    //    put(request, response, filepath, location, server);
+    }
 }
 
 void options (Http::Response &response, const Configuration::location *location)
@@ -177,5 +182,5 @@ void mdelete (Http::Response &response, const std::string &filepath, const Confi
     }
 }
 
-};
-};
+}; // namespace Methods
+}; // namespace Webserv

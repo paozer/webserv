@@ -20,7 +20,7 @@ int ServerSocket::set_socket_fd(const std::string& ip_address, int port)
     struct sockaddr_in sock_addr;
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = inet_addr(ip_address.c_str());
-    sock_addr.sin_port = Http::mhtons(port);
+    sock_addr.sin_port = htons(port);
     bzero(&sock_addr.sin_zero, 8);
     if (sock_addr.sin_addr.s_addr == INADDR_NONE) {
         strerror(errno);

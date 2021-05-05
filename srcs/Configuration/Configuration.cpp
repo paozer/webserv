@@ -12,10 +12,10 @@ void Configuration::parse(std::string const &file)
         for (std::vector<Configuration::server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
             complete_config(*it);
     } catch (Webserv::Parsing::ParsingException const &e){
-        std::cout << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
         exit(0);
     } catch (Webserv::ConfException const &e){
-        std::cout << e.what() << std::endl;
+        std::cerr << e.what() << std::endl;
         exit(0);
     }
     if (print_conf)
@@ -205,7 +205,7 @@ void    Configuration::set_default(std::list<std::string> &conf)
         }
     }
     if (max_workers == -1)
-        max_workers =  3;
+        max_workers = 3;
     if (max_connections_workers == -1)
         max_connections_workers = 100;
 }

@@ -14,7 +14,7 @@ void ChunkedBody::decode (std::string& chunk)
     while (!chunk.empty()) {
         if (curr_chunk_size == -1) {
             i = chunk.find(CRLF);
-            if (i == std::string::npos || i != chunk.find_first_of(CRLF))
+            if (i == std::string::npos)
                 return ;
             curr_chunk_size = Utils::atoi_base(chunk.substr(0, chunk.find_first_of(CRLF + ";")));
             curr_chunk_size += 2 * (curr_chunk_size > 0);
@@ -34,8 +34,6 @@ void ChunkedBody::decode (std::string& chunk)
             if ((i = chunk.find(CRLF)) == 0)
                 state = Complete;
             return ;
-        } else {
-            assert(false);
         }
     }
 }

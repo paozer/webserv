@@ -3,18 +3,29 @@
 namespace Webserv {
 namespace Http {
 
+Http::Response Response::create_standard_response (void)
+{
+    Http::Response response;
+    response.set_status_code("200");
+    response.append_header("Date", Time::get_http_formatted_now());
+    response.append_header("Server", "webserv/1.0");
+    return response;
+}
+
 void Response::fill_with_error (const std::string& status_code, const Configuration::server* server)
 {
     _body.clear();
     _status_code = status_code;
+    bool config_error_page_was_set = false;
     if (server != NULL) {
         std::map<int, std::string>::const_iterator it = server->_error_pages.find(Utils::atoi(status_code));
-        if (it != server->_error_pages.end()) {
-            _body = Files::get_file_content(it->second);
+        if (it != server->_error_pages.end()
+                && Files::fill_with_file_content(_body, it->second) == 0) {
+            config_error_page_was_set = true;
             _headers["Content-Type"] = get_media_type(it->second);
         }
     }
-    if (_body.empty()) {
+    if (!config_error_page_was_set) {
         std::string text = status_code;;
         if (STATUS_CODES.find(status_code) != STATUS_CODES.end())
             text += ": " + STATUS_CODES[status_code];
@@ -26,13 +37,12 @@ void Response::fill_with_error (const std::string& status_code, const Configurat
     _headers["Connnection"] = "close";
 }
 
-Http::Response Response::create_standard_response (void)
+void Response::append_header (const std::string& field_name, const std::string& field_value)
 {
-    Http::Response response;
-    response.set_status_code("200");
-    response.append_header("Date", Time::get_http_formatted_now());
-    response.append_header("Server", "webserv/1.0");
-    return response;
+    if (_headers.find(field_name) != _headers.end())
+        _headers[field_name].append(", " + field_value);
+    else
+        _headers[field_name] = field_value;
 }
 
 void Response::build_raw_packet (void)
@@ -46,12 +56,12 @@ void Response::build_raw_packet (void)
     _raw_packet += CRLF + _body;
 }
 
-void Response::append_header (const std::string& field_name, const std::string& field_value)
+bool Response::should_close (void) const
 {
-    if (_headers.find(field_name) != _headers.end())
-        _headers[field_name].append(", " + field_value);
-    else
-        _headers[field_name] = field_value;
+    HeaderMap::const_iterator it = _headers.find("Connection");
+    if (it == _headers.end())
+        return false;
+    return it->second == "close";
 }
 
 }; // namespace Http

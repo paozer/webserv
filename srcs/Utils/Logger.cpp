@@ -6,20 +6,18 @@ namespace Log {
 void prepare_file()
 {
     mode_t mode = S_IRWXU | S_IRWXG | S_IROTH;
-    if ((fd = open("log", O_CREAT | O_RDWR | O_TRUNC, mode)) == -1){
-        std::cout << "Can't create log" << std::endl;
-    }
+    if ((fd = open("log", O_CREAT | O_RDWR | O_TRUNC, mode)) == -1)
+        std::cerr << "Can't create log" << std::endl;
 }
 
 void out(std::string const &server_name, std::string const &str)
 {
     if (fd == -1)
         return ;
-    int width;
     std::string res (Time::get_date_logger_format());
     if (!server_name.empty())
         res += ("[" + server_name + "] ");
-    width = res.length() + 1;
+    int width = res.length() + 1;
     for (std::string::const_iterator it = str.begin(); it != str.end(); ++it) {
         if (*it != '\r')
             res.push_back(*it);

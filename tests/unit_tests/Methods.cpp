@@ -6,7 +6,7 @@
 TEST_CASE("selecting server/locations based on requests parts", "[Methods]")
 {
     Webserv::Configuration conf;
-    conf.parse("tests/unit_tests/conf/configpao.conf");
+    conf.parse("tests/unit_tests/unittests.conf");
     const Webserv::Configuration::server* s;
     const Webserv::Configuration::location* l;
     std::vector<std::string> methods;

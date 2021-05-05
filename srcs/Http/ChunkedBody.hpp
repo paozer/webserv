@@ -20,7 +20,6 @@ class ChunkedBody {
     private:
         std::string body;
         std::string trailer_part;
-
         ssize_t curr_chunk_size;
         State state;
 

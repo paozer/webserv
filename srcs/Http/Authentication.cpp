@@ -8,8 +8,7 @@ bool credentials_are_valid (const std::string& auth_header_value, const std::lis
     size_t i = auth_header_value.find(' ');
     if (auth_header_value.compare(0, i, "Basic") != 0)
         return false;
-    i = auth_header_value.find_first_not_of(' ', i); // necessary ?
-    std::string decoded = base64_decode(auth_header_value.substr(i));
+    std::string decoded = base64_decode(auth_header_value.substr(i + 1));
     return std::find(credentials.begin(), credentials.end(), decoded) != credentials.end();
 }
 
@@ -19,7 +18,6 @@ std::string base64_decode(const std::string& encoded)
     static const std::string charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int num = 0;
     int count_bits = 0;
-
     size_t k = 0;
     for (size_t i = 0; i < encoded.length(); i += 4) {
         num = 0, count_bits = 0;

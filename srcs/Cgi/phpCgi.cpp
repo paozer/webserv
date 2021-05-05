@@ -137,7 +137,7 @@ std::string	phpCgi::ft_itos(const int& ipt) {
 		n /= 10;
 	}
 	return (ret);
-	
+
 }
 
 void	phpCgi::setEnvArray() {
@@ -231,7 +231,7 @@ void	phpCgi::setEnvMap(
 
 	/*	SERVER_NAME	*/
 	_envVar["SERVER_NAME"] = server->_server_name;
-	
+
 	/*	SERVER_PORT	*/
 	std::string port = ft_itos(server->_listen.first);
 	_envVar["SERVER_PORT"] = port;
@@ -328,7 +328,7 @@ void	phpCgi::methodPost(
 	close(pipeFd[1]);
 
 	char buffer[BUFSIZ];
-	std::string body;	
+	std::string body;
 
 	int ret = 0;
 	while ((ret = read(pipeFd[0], buffer, BUFSIZ - 1)) > 0) {
@@ -337,7 +337,7 @@ void	phpCgi::methodPost(
 		if (headersAreOut(body))
 			body = cutHeaders(body, response);
 	}
-	
+
 	response.set_body(body);
 	response.set_content_length();
 	close(pipeFd[0]);
@@ -371,7 +371,7 @@ void	phpCgi::methodGet(
 	close(pipeFd[1]);
 
 	char buffer[BUFSIZ];
-	std::string body;	
+	std::string body;
 
 	int ret = 0;
 	while ((ret = read(pipeFd[0], buffer, BUFSIZ - 1)) > 0) {
@@ -380,7 +380,7 @@ void	phpCgi::methodGet(
 		if (headersAreOut(body))
 			body = cutHeaders(body, response);
 	}
-	
+
 	response.set_body(body);
 	response.set_content_length();
 	close(pipeFd[0]);
@@ -405,7 +405,7 @@ phpCgi::phpCgi(
 	if (st.st_mode & S_IXUSR) {
 		setEnvMap(method, server, location, request, response, filepath);
 		setEnvArray();
-		
+
 		if (method == "GET")
 			methodGet(response, location, filepath);
 		else if (method == "POST")
@@ -427,7 +427,7 @@ void	phpCgi::pull502(httpResponse& response) {
 	ret += "<h1>502: Bad Gateway Interface</h1>\n";
 	ret += "</body>\n";
 	ret += "</html>\n";
-	
+
 	response.set_status_code("502");
 	response.set_body(ret);
 	response.set_content_length();

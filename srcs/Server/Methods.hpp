@@ -22,6 +22,7 @@ namespace Methods {
 Http::Response method_handler (const Http::Request& request, const Configuration& config, int fd);
 
 void get (Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server);
+void post (const Http::Request& request, Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server);
 void put (const Http::Request& request, Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server);
 void options(Http::Response &response, const Configuration::location *location);
 void mdelete (Http::Response &response, const std::string &filepath, const Configuration::server* server);

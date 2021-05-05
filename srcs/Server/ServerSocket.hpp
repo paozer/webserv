@@ -11,7 +11,6 @@
 #include <fcntl.h> // fcntl
 #include <errno.h> // errno
 #include <unistd.h> // close
-//#include <string.h> // TODO: unecessary include ?
 
 namespace Webserv {
 

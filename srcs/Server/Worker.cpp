@@ -8,19 +8,19 @@ Worker::Worker(worker_config *w)
     _id = "worker_" + _w_conf->id;
     _connections = ConnectionManagement(_id, _w_conf->conf);
     _connections._max_fd = 0;
-    _connections._buffer = new char[100000];
+    _connections._buffer = new char[8192];
     _cli_len = sizeof(_cli_addr);
     Log::out(_id, "created");
 }
 
 Worker::~Worker()
 {
-    delete[] _connections._buffer;
     pthread_mutex_unlock(&_w_conf->access);
     pthread_mutex_destroy(&_w_conf->access);
+    delete[] _connections._buffer;
     FD_ZERO(&_connections._read_fds);
     FD_ZERO(&_connections._write_fds);
-    Log::out(_id, Time::get_total_time("time in function: ", start_time) + " - managed " + Utils::itoa(total_connections) + " connections.");
+    Log::out(_id, "time in function: " + Time::get_total_time(start_time) + " - managed " + Utils::itoa(total_connections) + " connections.");
 }
 
 void    Worker::accept_new_connection()
@@ -50,15 +50,16 @@ void    Worker::worker_routine()
     while(true)
     {
         pthread_mutex_lock(&_w_conf->access);
+        _w_conf->nb_connections -= _connections.lost_connections_count;
+        _connections.lost_connections_count = 0;
         if (_w_conf->stop)
             return ;
         if (_w_conf->new_connection){
             accept_new_connection();
             _w_conf->new_connection = false;
         }
-        _w_conf->nb_connections -= _connections.lost_connections_count;
         pthread_mutex_unlock(&_w_conf->access);
-        if (_w_conf->nb_connections)
+        if (_connections._max_fd)
             _connections.loop_worker();
     }
 }

@@ -6,15 +6,16 @@ namespace Files {
 int fill_with_file_content (std::string& s, const std::string& filepath)
 {
     int fd;
-    if ((fd = open(filepath.c_str(), O_RDONLY)) > -1) {
-        struct stat stats;
-        if (fstat(fd, &stats) == 0) {
-            char buf[stats.st_size];
-            if (read(fd, &buf, stats.st_size) == stats.st_size)
-                s = std::string(buf, stats.st_size);
-        }
+    struct stat stats;
+    if (stat(filepath.c_str(), &stats) == 0 &&
+            (fd = open(filepath.c_str(), O_RDONLY)) != -1) {
+        char buf[stats.st_size];
+        int ret = read(fd, &buf, stats.st_size);
         close(fd);
-        return 0;
+        if (ret == stats.st_size) {
+            s = std::string(buf, stats.st_size);
+            return 0;
+        }
     }
     return -1;
 }
@@ -22,28 +23,29 @@ int fill_with_file_content (std::string& s, const std::string& filepath)
 std::string get_file_content (const std::string& filepath)
 {
     std::string s;
-    int fd;
-    if ((fd = open(filepath.c_str(), O_RDONLY)) > -1) {
-        struct stat stats;
-        if (fstat(fd, &stats) == 0) {
-            char buf[stats.st_size];
-            if (read(fd, &buf, stats.st_size) == stats.st_size)
-                s = std::string(buf, stats.st_size);
-        }
-        close(fd);
-    }
+    fill_with_file_content(s, filepath);
     return s;
 }
 
-std::string get_directory_listing (const std::string& path)
+std::vector<std::string> get_directory_listing (const std::string& path)
 {
-    std::string s;
+    std::vector<std::string> dl;
     DIR * dir = opendir(path.c_str());
-    for (struct dirent* dir_entry; (dir_entry = readdir(dir)) != NULL; ) {
-        s += dir_entry->d_name;
-        s += "\n";
+    if (dir != NULL) {
+        for (struct dirent* dir_entry; (dir_entry = readdir(dir)) != NULL; )
+            dl.push_back(dir_entry->d_name);
+        closedir(dir);
     }
-    closedir(dir);
+    return dl;
+}
+
+std::string get_http_directory_listing (const std::string& path)
+{
+    std::string s = "<html>\n<body>\n<p>\n";
+    std::vector<std::string> dl = get_directory_listing(path);
+    for (std::vector<std::string>::const_iterator it = dl.begin(); it != dl.end(); ++it)
+        s += *it + "<br>\n";
+    s += "</p>\n</body>\n</html>";
     return s;
 }
 

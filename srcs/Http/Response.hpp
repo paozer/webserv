@@ -15,6 +15,7 @@ class Response
         void build_raw_packet (void);
         void fill_with_error (const std::string& status_code, const Configuration::server* server);
         static Response create_standard_response (void);
+        bool should_close (void) const;
 
         inline const std::string& get_raw_packet (void) const { return _raw_packet; }
         inline const std::string& get_body (void) const { return _body; }
@@ -24,13 +25,6 @@ class Response
         inline void unset_body (void) { _body.clear(); }
         inline void set_content_length (void) { _headers["Content-Length"] = Utils::itoa(_body.length()); }
         void append_header (const std::string& field_name, const std::string& field_value);
-        inline bool should_close (void) const
-        {
-            HeaderMap::const_iterator it = _headers.find("Connection");
-            if (it == _headers.end())
-                return false;
-            return it->second == "close";
-        }
 
     private:
         std::string _status_code;

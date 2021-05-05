@@ -49,7 +49,7 @@ class Worker
         worker_config           *_w_conf;
 
         int                     total_connections;
-        time_t                    start_time;
+        time_t                  start_time;
 
         void                    accept_new_connection();
         void                    get_new_connection_fd();

@@ -13,7 +13,7 @@ void    check_blocks(std::string const &line)
         if (line[i] == '{' || line[i] == '}')
             line[i] == '{' ? ++left : ++right;
         if (left - right < 0)
-                throw ParsingException(0, "Bad indentation.");
+            throw ParsingException(0, "Bad indentation.");
     }
     if (left != right)
         throw ParsingException(0, left > right ? "'}' missing." : "'{' missing.");
@@ -21,7 +21,7 @@ void    check_blocks(std::string const &line)
 
 bool    compare_first_word(std::string const &base, std::string const &to_compare)
 {
-   if (base.length() > to_compare.length())
+    if (base.length() > to_compare.length())
         return false;
     if (to_compare.compare(0, base.length(), base))
         return false;
@@ -111,7 +111,7 @@ bool    valid_methods(std::string line)
             if (!tmp.compare(allowed_methods[i])) {
                 if (tmp == "CONNECT" || tmp == "TRACE")
                     throw ConfException(line, tmp + " is not allowed on this server.");
-            find = true;
+                find = true;
             }
         if (!find)
             return false;
@@ -143,7 +143,7 @@ bool    valid_line(std::string &line)
     if (compare_first_word("server", line))
         return !space;
     if (compare_first_word("listen", line) || compare_first_word("error_page", line))
-        return  space == 2 ;
+        return  space == 2;
     if (line.length() == 1 && (line == "}" || line == "{"))
         return !space;
     if (compare_first_word("auth_basic", line))

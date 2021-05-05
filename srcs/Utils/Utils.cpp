@@ -91,18 +91,15 @@ std::string get_word(std::string &string)
 
 std::list<std::string> split (const std::string& s, const std::string& delimiter)
 {
-    size_t i = 0;
-    size_t j = 0;
     std::list<std::string> ret;
-    while (true) {
+    for (size_t i = 0, j = 0; true; i = j + 1) {
         j = s.find(delimiter, i);
         if (j == std::string::npos) {
-            ret.push_back(s.substr(i, j - i - 1));
+            ret.push_back(s.substr(i));
             break ;
         } else {
             ret.push_back(s.substr(i, j - i));
         }
-        i = j + 1;
     }
     return ret;
 }
