@@ -3,18 +3,14 @@
 namespace Webserv {
 namespace Methods {
 
-//response.append_header("Content-Location", ""); // TODO set to alternative uri for requested ressource
-
-// TODO if uri maps to different ressources parse their
-// charset/language and return the most appropriate
-//response.append_header("Accept-Charsets", "");
-//response.append_header("Accept-Language", "");
-//response.append_header("Content-Language", "");
-
+//ACCEPT-CHARSETS used in content negotiation
+//ACCEPT-LANGUAGE used in content negotiation
 //AUTHORIZATION used in authentication
 //ALLOW used in OPTIONS and 405 error
 //CONTENT-LENGTH used for all responses
 //CONTENT-TYPE used in GET/POST TODO POST
+//CONTENT-LANGUAGE used when returned ressource was content negotiated // TODO
+//CONTENT-LOCATION used when returned ressource was content negotiated // TODO
 //HOST used in request routing
 //TRANSFER-ENCODING used when receiving/sending chunked body
 //LAST-MODIFIED used in GET/PUT when a ressource was created TODO POST
@@ -24,12 +20,12 @@ namespace Methods {
 //USER-AGENT this is not useful
 //WWW-AUTHENTICATE used for unauthenticated requests
 
-Http::Response method_handler (const Http::Request& request, const Configuration& config, int fd)
+Http::Response method_handler (const Http::Request& request, const Configuration& config, int cli_socket)
 {
-    struct sockaddr_in sin;
-    socklen_t len = sizeof(sin);
-    getsockname(fd, (struct sockaddr *)&sin, &len);
-    const Configuration::server* server = Routing::select_server(config, Http::inet_ntoa(sin.sin_addr.s_addr), Utils::itoa(htons(sin.sin_port)), request.get_header_values("host"));
+    struct sockaddr_in s;
+    socklen_t len = sizeof(s);
+    getsockname(cli_socket, reinterpret_cast<struct sockaddr *>(&s), &len);
+    const Configuration::server* server = Routing::select_server(config, Http::inet_ntoa(s.sin_addr.s_addr), Utils::itoa(htons(s.sin_port)), request.get_header_values("host"));
     Http::Response response = Http::Response::create_standard_response();
 
     for (int i = 0; i < 1; ++i) { // dodgy for loop
@@ -81,8 +77,6 @@ Http::Response method_handler (const Http::Request& request, const Configuration
 void get (const Http::Request& request, Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server)
 {
     int fd;
-    if (request.has_header("accept-language") || request.has_header("accept-charset"))
-        const_cast<std::string&>(filepath) = ContentNegotiation::selectFile(request, response, filepath);
     if ((fd = open(filepath.c_str(), O_RDONLY)) > -1) {
         struct stat stats;
         if (fstat(fd, &stats) == 0) {
@@ -100,16 +94,14 @@ void get (const Http::Request& request, Http::Response& response, const std::str
                     response.fill_with_error("403", server);
                 }
             } else {
-                char buf[stats.st_size];
-                if (read(fd, &buf, stats.st_size) == stats.st_size) {
-                    response.set_body(std::string(buf, stats.st_size));
-                    // tmp, should be connect with ContentNegotiation in case file has name like: index.html.en
-                    if (get_media_type(filepath) == "application/octet-stream")
-                        response.append_header("Content-Type", "text/html");
-                    else
-                        response.append_header("Content-Type", get_media_type(filepath));
-                } else {
+                if (request.has_header("accept-language") || request.has_header("accept-charset"))
+                    const_cast<std::string&>(filepath) = ContentNegotiation::selectFile(request, response, filepath);
+                std::string s;
+                if (Files::fill_with_file_content(s, filepath) == -1) {
                     response.fill_with_error("403", server);
+                } else {
+                    response.set_body(s);
+                    response.append_header("Content-Type", get_media_type(filepath));
                 }
             }
             if (response.get_status_code() != "403" && response.get_status_code() != "404")

@@ -13,6 +13,7 @@ int fill_with_file_content (std::string& s, const std::string& filepath)
         int ret = read(fd, &buf, stats.st_size);
         close(fd);
         if (ret == stats.st_size) {
+            s.reserve(stats.st_size);
             s = std::string(buf, stats.st_size);
             return 0;
         }
@@ -27,9 +28,9 @@ std::string get_file_content (const std::string& filepath)
     return s;
 }
 
-std::vector<std::string> get_directory_listing (const std::string& path)
+std::list<std::string> get_directory_listing (const std::string& path)
 {
-    std::vector<std::string> dl;
+    std::list<std::string> dl;
     DIR * dir = opendir(path.c_str());
     if (dir != NULL) {
         for (struct dirent* dir_entry; (dir_entry = readdir(dir)) != NULL; )
@@ -42,8 +43,8 @@ std::vector<std::string> get_directory_listing (const std::string& path)
 std::string get_http_directory_listing (const std::string& path)
 {
     std::string s = "<html>\n<body>\n<p>\n";
-    std::vector<std::string> dl = get_directory_listing(path);
-    for (std::vector<std::string>::const_iterator it = dl.begin(); it != dl.end(); ++it)
+    std::list<std::string> dl = get_directory_listing(path);
+    for (std::list<std::string>::const_iterator it = dl.begin(); it != dl.end(); ++it)
         s += *it + "<br>\n";
     s += "</p>\n</body>\n</html>";
     return s;

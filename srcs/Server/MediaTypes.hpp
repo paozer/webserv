@@ -9,11 +9,12 @@ static std::map<std::string, std::string> MEDIA_TYPES = create_media_types_map()
 
 inline std::string get_media_type (const std::string& filename)
 {
-    std::string extension = filename.substr(filename.rfind("."));
-    std::map<std::string, std::string>::const_iterator it = MEDIA_TYPES.find(extension);
-    if (it == MEDIA_TYPES.end())
-        return "application/octet-stream";
-    return it->second;
+    for (std::map<std::string, std::string>::const_iterator it = MEDIA_TYPES.begin();
+            it != MEDIA_TYPES.end(); ++it) {
+        if (filename.find(it->first) != std::string::npos)
+            return it->second;
+    }
+    return "application/octet-stream";
 }
 
 std::map<std::string, std::string> create_media_types_map (void)

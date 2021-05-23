@@ -63,7 +63,16 @@ std::string selectFile(const Http::Request& request, Http::Response& response, c
     request.has_header("accept-charset") ? charsetOn = true : charsetOn = false;
 
     std::string name = ret.substr(ret.rfind("/") + 1);
-    std::vector<std::string> files = Files::get_directory_listing(ret.substr(0, ret.rfind("/")));
+    std::list<std::string> files = Files::get_directory_listing(ret.substr(0, ret.rfind("/")));
+
+    for (std::list<std::string>::iterator it = files.begin(); it != files.end(); ++it) {
+        if (it->find(name) == std::string::npos) {
+            std::list<std::string>::iterator tmp = it;
+            --tmp;
+            files.erase(it);
+            it = tmp;
+        }
+    }
 
     if (files.size() <= 1)
         return (filepath);
@@ -79,7 +88,7 @@ std::string selectFile(const Http::Request& request, Http::Response& response, c
     std::string body;
     std::string tag;
     std::string path;
-    for (std::vector<std::string>::iterator it = files.begin(); it != files.end(); ++it) {
+    for (std::list<std::string>::iterator it = files.begin(); it != files.end(); ++it) {
         // in URI like: /directory/index, remove index to look all files in directory.
         path = ret.substr(0, ret.rfind("/") + 1);
         path += *it;

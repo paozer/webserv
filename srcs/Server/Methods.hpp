@@ -20,7 +20,7 @@
 namespace Webserv {
 namespace Methods {
 
-Http::Response method_handler (const Http::Request& request, const Configuration& config, int fd);
+Http::Response method_handler (const Http::Request& request, const Configuration& config, int cli_socket);
 
 void get (const Http::Request& request, Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server);
 void post (const Http::Request& request, Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server);
