@@ -6,8 +6,6 @@ Worker::Worker(worker_config *w)
     : _id ("worker_" + w->id), _connections (ConnectionManagement(_id, w->conf))
 {
     _w_conf = w;
-    //_id = "worker_" + _w_conf->id;
-    //_connections = ConnectionManagement(_id, _w_conf->conf);
     _connections._max_fd = 0;
     _connections._buffer = new char[8192];
     Log::out(_id, "created");
@@ -26,7 +24,7 @@ Worker::~Worker()
 void    Worker::accept_new_connection()
 {
     int new_client_socket = accept(_w_conf->tmp_connections, NULL, NULL);
-    if (new_client_socket == -1 && errno != EAGAIN) {
+    if (new_client_socket == -1) {
         Log::out(_id, std::string("new connection error: ") + std::strerror(errno));
     } else {
         FD_SET(new_client_socket, &_connections._write_fds);
@@ -62,7 +60,7 @@ void    Worker::worker_routine()
         if (_connections._max_fd)
             _connections.loop_worker();
         if (need_to_sleep)
-            usleep(1000000);
+            usleep(10000);
     }
 }
 

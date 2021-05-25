@@ -83,6 +83,7 @@ void    Server::main_loop_without_workers()
             }
         }
         _connections.loop_server(_socket);
+        usleep(5000);
     }
 }
 

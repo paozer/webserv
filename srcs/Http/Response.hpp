@@ -25,10 +25,10 @@ class Response
         inline void unset_body (void) { _body.clear(); }
         inline void set_content_length (void) { _headers["Content-Length"] = Utils::itoa(_body.length()); }
         void append_header (const std::string& field_name, const std::string& field_value);
-
+HeaderMap _headers;
     private:
         std::string _status_code;
-        HeaderMap _headers;
+        //HeaderMap _headers;
         std::string _body;
         std::string _raw_packet;
 
