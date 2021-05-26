@@ -36,6 +36,7 @@ class ConnectionManagement
         void    construct_response(int fd);
         void    send_response (int fd);
         void    close_connection (int fd);
+        void    close_tmp_file(void);
 
         int             _max_fd;
         int             _nb_server;
@@ -63,14 +64,15 @@ class ConnectionManagement
                 {
                 }
 
-                settings (bool close, int off, const std::string& s)
-                    : should_close(close), offset(off), response_queue(s)
+                settings (bool close, int off, const std::string& s, int fd)
+                    : should_close(close), offset(off), response_queue(s), tmpFileFd(fd), readfile(false)
                 {
                 }
-
                 bool should_close;
                 int offset;
                 std::string response_queue;
+                int tmpFileFd;
+                bool readfile;
             };
 
             std::map<int, struct settings> ready_responses;

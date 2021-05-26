@@ -24,6 +24,7 @@ Server::~Server()
     delete[] _workers;
     if (!_configuration.max_workers)
         delete[] _connections._buffer;
+    Files::remove_dir("tmpFile");
     Log::out("Server", "stop");
     Log::out("", " total connections: " + Utils::itoa(total_connections));
     Log::out("", " server uptime: " + Time::get_total_time(start_time));

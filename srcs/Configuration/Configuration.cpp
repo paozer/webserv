@@ -11,6 +11,8 @@ void Configuration::parse(std::string const &file)
             load_config(*it);
         for (std::vector<Configuration::server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
             complete_config(*it);
+        if (!(Files::create_dir("tmpFile")))
+            throw ConfException("Mkdir", "Cannot create a dir for tmp file.");
     } catch (Webserv::Parsing::ParsingException const &e){
         std::cerr << e.what() << std::endl;
         exit(0);

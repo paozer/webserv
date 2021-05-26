@@ -286,34 +286,59 @@ std::string Cgi::cutHeaders(const std::string& body, httpResponse& response) {
 std::string Cgi::generateRandomName() {
     srand(time(0));
 
-    std::string name = "tmp_" + ft_itos(rand() % 100000) + ft_itos(rand() % 10);
+    std::string name = "tmpFile/" + ft_itos(rand() % 100000) + ft_itos(rand() % 10);
     struct stat st;
     while (stat(name.c_str(), &st) >= 0)
-        name = "tmp_" + ft_itos(rand() % 100000) + ft_itos(rand() % 10);
+        name = "tmpFile/" + ft_itos(rand() % 100000) + ft_itos(rand() % 10);
     return (name);
 } // generateRandomName
+
+
+// void    Cgi::processingPostOutput(int fd, std::string& name, httpResponse& response) {
+//     lseek(fd, 0, SEEK_SET);
+//     struct stat st;
+//     fstat(fd, &st);
+//     std::string body;
+//     body.reserve(st.st_size);
+
+//     char buffer[BUFSIZ];
+//     int ret = 0;
+//     while ((ret = read(fd, buffer, BUFSIZ)) > 0)
+//         body.append(buffer, ret);
+
+//     body = cutHeaders(body, response);
+
+//     close(fd);
+//     if (unlink(name.c_str()) < 0)
+//         Log::out(name, strerror(errno));
+
+//     response.set_body(body);
+//     response.set_content_length();
+
+// } // processingPostOutput
 
 void    Cgi::processingPostOutput(int fd, std::string& name, httpResponse& response) {
     lseek(fd, 0, SEEK_SET);
     struct stat st;
     fstat(fd, &st);
+
     std::string body;
-    body.reserve(st.st_size);
-
-    char buffer[BUFSIZ];
     int ret = 0;
-    while ((ret = read(fd, buffer, BUFSIZ)) > 0)
+    char buffer[BUFSIZ];
+    while (body.find("\r\n\r\n") == std::string::npos) {
+        ret = read(fd, buffer, BUFSIZ);
         body.append(buffer, ret);
-
+        if (ret < BUFSIZ)
+            break ;
+    }
+    size_t tmpsize = st.st_size - body.size();
     body = cutHeaders(body, response);
-
-    close(fd);
-    if (unlink(name.c_str()) < 0)
-        Log::out(name, strerror(errno));
-
     response.set_body(body);
     response.set_content_length();
-
+    response.add_body_length(tmpsize);
+    response.file_fd = fd;
+    std::cerr << tmpsize << std::endl;
+    sleep(3);
 } // processingPostOutput
 
 void    Cgi::methodPost(
@@ -324,9 +349,8 @@ void    Cgi::methodPost(
 
     int tmpFd;
     std::string name = generateRandomName();
-    if ((tmpFd = open(name.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0)
-        std::cout << "ERROR FILE" << std::endl;
-
+    if ((tmpFd = open(name.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO)) < 0)
+        Log::out("Creation of a new tmp file: ", std::strerror(errno));
     int pipeInput[2];
     if (pipe(pipeInput) < 0)
         std::cout << "pipe: " << strerror(errno) << std::endl;
@@ -359,6 +383,7 @@ void    Cgi::methodPost(
 
         waitpid(-1, NULL, 0);
         processingPostOutput(tmpFd, name, response);
+
     }
 } // methodPost
 

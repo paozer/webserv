@@ -72,7 +72,8 @@ Http::Response method_handler (const Http::Request& request, const Configuration
         options(response, location);
     }
     } // dodgy for loop
-    response.set_content_length();
+    if (response.file_fd == -1)
+         response.set_content_length();
     if (request.get_method() == "HEAD")
         response.unset_body();
     return response;

@@ -18,6 +18,7 @@ Worker::~Worker()
     delete[] _connections._buffer;
     FD_ZERO(&_connections._read_fds);
     FD_ZERO(&_connections._write_fds);
+    _connections.close_tmp_file();
     Log::out(_id, "time in function: " + Time::get_total_time(start_time) + " - managed " + Utils::itoa(total_connections) + " connections.");
 }
 

@@ -9,6 +9,7 @@ Http::Response Response::create_standard_response (void)
     response.set_status_code("200");
     response.append_header("Date", Time::get_http_formatted_now());
     response.append_header("Server", "webserv/1.0");
+    response.file_fd = -1;
     return response;
 }
 

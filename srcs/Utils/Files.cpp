@@ -49,5 +49,24 @@ std::string get_http_directory_listing (const std::string& path)
     return s;
 }
 
+bool create_dir(const std::string& filename)
+{
+    if (!(mkdir(filename.c_str(), 0777)))
+        return true;
+    return errno == EEXIST;
+}
+
+void remove_dir(const std::string& filename)
+{
+    std::vector<std::string> file = get_directory_listing(filename);
+    if (!file.empty()) {
+        for (std::vector<std::string>::iterator it = file.begin(); it != file.end(); ++it)
+            if (unlink((*it).c_str()))
+                std::cout << std::strerror(errno) << std::endl;
+    } else
+        std::cout << "pas de fi" << std::endl;
+    rmdir(filename.c_str());
+}
+
 }; // namespace Files
 }; // namespace Webserv
