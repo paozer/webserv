@@ -101,7 +101,6 @@ void    ConnectionManagement::send_from_file(struct settings *tmp, int fd)
             if (tmp->should_close) {
                 close_connection(fd);
             } else {
-                tmp->readfile = false;
                 ready_responses.erase(fd);
             }
         } else if (ret_write >= 0 && ret_write < ret_read) {
