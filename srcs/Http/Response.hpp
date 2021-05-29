@@ -13,6 +13,7 @@ class Response
 {
     public:
         int file_fd;
+        std::string filename;
 
         void build_raw_packet (void);
         void fill_with_error (const std::string& status_code, const Configuration::server* server);

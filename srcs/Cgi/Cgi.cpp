@@ -337,8 +337,8 @@ void    Cgi::processingPostOutput(int fd, std::string& name, httpResponse& respo
     response.set_content_length();
     response.add_body_length(tmpsize);
     response.file_fd = fd;
-    std::cerr << tmpsize << std::endl;
-    sleep(3);
+    // std::cerr << tmpsize << std::endl;
+    // sleep(3);
 } // processingPostOutput
 
 void    Cgi::methodPost(
@@ -351,6 +351,7 @@ void    Cgi::methodPost(
     std::string name = generateRandomName();
     if ((tmpFd = open(name.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRWXU | S_IRWXG | S_IRWXO)) < 0)
         Log::out("Creation of a new tmp file: ", std::strerror(errno));
+    response.filename = name;
     int pipeInput[2];
     if (pipe(pipeInput) < 0)
         std::cout << "pipe: " << strerror(errno) << std::endl;
@@ -385,6 +386,8 @@ void    Cgi::methodPost(
         processingPostOutput(tmpFd, name, response);
 
     }
+    // std::cout << "CGI DONE" << std::endl;
+    // sleep(2);
 } // methodPost
 
 void    Cgi::methodGet(

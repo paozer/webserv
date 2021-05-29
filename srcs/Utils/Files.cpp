@@ -59,12 +59,9 @@ bool create_dir(const std::string& filename)
 void remove_dir(const std::string& filename)
 {
     std::vector<std::string> file = get_directory_listing(filename);
-    if (!file.empty()) {
+    if (!file.empty())
         for (std::vector<std::string>::iterator it = file.begin(); it != file.end(); ++it)
-            if (unlink((*it).c_str()))
-                std::cout << std::strerror(errno) << std::endl;
-    } else
-        std::cout << "pas de fi" << std::endl;
+            unlink((filename + "/" + *it).c_str());
     rmdir(filename.c_str());
 }
 

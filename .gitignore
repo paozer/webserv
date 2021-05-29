@@ -1,7 +1,0 @@
-log
-tags
-webserv
-webserv.dSYM
-tests/**/multiple_same
-tests/**/file_should_exist_after
-.DS_Store

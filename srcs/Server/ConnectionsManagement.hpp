@@ -72,10 +72,14 @@ class ConnectionManagement
                 int offset;
                 std::string response_queue;
                 int tmpFileFd;
+                std::string filename;
                 bool readfile;
             };
 
             std::map<int, struct settings> ready_responses;
+
+            void    send_from_file(struct settings *tmp, int fd);
+            void    send_from_queue(struct settings *tmp, int fd);
 };
 
 }; // namespace Webserv
