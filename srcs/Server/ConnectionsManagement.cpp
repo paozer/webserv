@@ -91,12 +91,11 @@ void    ConnectionManagement::send_from_file(struct settings *tmp, int fd)
 {
     char buffer[8192];
     int ret_read = read(tmp->tmpFileFd, buffer, 8192);
-    if (ret_read < 0) { // Erreur read
-        // sleep(2);
+    if (ret_read < 0) {
         Log::out(_id + "(read)", std::strerror(errno));
     } else {
         int ret_write = write(fd, buffer, ret_read);
-        if (ret_read < 8192 && ret_read == ret_write) { // Tout s'est bien passé et c'est fini
+        if (ret_read < 8192 && ret_read == ret_write) {
             close(tmp->tmpFileFd);
             unlink(tmp->filename.c_str());
             if (tmp->should_close) {
@@ -104,18 +103,15 @@ void    ConnectionManagement::send_from_file(struct settings *tmp, int fd)
             } else {
                 tmp->readfile = false;
                 ready_responses.erase(fd);
-                // std::cerr << "finish" << std::endl;
             }
-            // sleep(2);
-        } else if (ret_write >= 0 && ret_write < ret_read) { // bien envoyé mais différence entre lu et envoyé
+        } else if (ret_write >= 0 && ret_write < ret_read) {
             lseek(tmp->tmpFileFd, ret_write - ret_read, SEEK_CUR);
-        } else if (ret_write < 0) { // Erreur write
+        } else if (ret_write < 0) {
             close(tmp->tmpFileFd);
             unlink(tmp->filename.c_str());
             close_connection(fd);
-        } // Tout s'est bien passé et reste du contenu, on fait rien de spécial
+        }
     }
-        // sleep(1);
 }
 
 void    ConnectionManagement::construct_response(int fd)
