@@ -14,7 +14,7 @@ inline std::string get_media_type (const std::string& filename)
         if (filename.find(it->first) != std::string::npos)
             return it->second;
     }
-    return "application/octet-stream";
+    return "text/plain";
 }
 
 std::map<std::string, std::string> create_media_types_map (void)

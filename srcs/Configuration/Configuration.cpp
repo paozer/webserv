@@ -267,7 +267,7 @@ void                    Configuration::print_configuration()
                     if (iv == (*it).auth_credentials.begin())
                         std::cout << sp << "auth_basic_credentials : " << *iv << std::endl;
                     else
-                        std::cout << sp << "           " << *iv << std::endl;
+                        std::cout << sp << "                         " << *iv << std::endl;
                 }
             for (std::vector<std::string>::iterator iv = (*it)._cgi_path.begin(); iv != (*it)._cgi_path.end(); ++iv)
                 std::cout << sp << "cgi_path               : " << *iv << std::endl;

@@ -9,14 +9,16 @@ int fill_with_file_content (std::string& s, const std::string& filepath)
     struct stat stats;
     if (stat(filepath.c_str(), &stats) == 0 &&
             (fd = open(filepath.c_str(), O_RDONLY)) != -1) {
-        char buf[stats.st_size];
-        int ret = read(fd, &buf, stats.st_size);
+        char* buf = new char[stats.st_size];
+        int ret = read(fd, buf, stats.st_size);
         close(fd);
         if (ret == stats.st_size) {
             s.reserve(stats.st_size);
             s = std::string(buf, stats.st_size);
-            return 0;
         }
+        delete[] buf;
+        if (ret == stats.st_size)
+            return 0;
     }
     return -1;
 }

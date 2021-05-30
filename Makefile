@@ -33,7 +33,7 @@ INCS		:=	$(addsuffix srcs/Http/Http.hpp, $(INCS))
 CC			=	clang++
 CFLAGS		=	-g3 -Wall -Wextra -std=c++98 -lpthread
 UT_CFLAGS 	=	-Wall -Wextra -std=c++11
-# CFLAGS		=	-g3 -fsanitize=address -Wall -Wextra -std=c++98
+#CFLAGS		=	-g3 -fsanitize=address -Wall -Wextra -std=c++98
 #CFLAGS		=	-g3 -fsanitize=thread -Wall -Wextra -std=c++98
 #UT_CFLAGS 	=	-g3 -fsanitize=address -Wall -Wextra -std=c++11
 

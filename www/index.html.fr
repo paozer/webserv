@@ -1,6 +1,0 @@
-<!DOCTYPE html>
-<html lang="fr">
-<body>
-<h1>SALUT, MONDE!</h1>
-</body>
-</html>

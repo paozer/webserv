@@ -26,7 +26,7 @@ Worker::~Worker()
 void    Worker::accept_new_connection()
 {
     int new_client_socket = accept(_w_conf->tmp_connections, NULL, NULL);
-    if (new_client_socket == -1 && errno != EAGAIN) {
+    if (new_client_socket == -1) {
         Log::out(_id, std::string("new connection error: ") + std::strerror(errno));
     } else {
         FD_SET(new_client_socket, &_connections._write_fds);

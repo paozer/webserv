@@ -13,7 +13,7 @@ int     ConnectionManagement::loop_server(std::vector<ServerSocket> const &serv_
         if (!is_server_fd(i, serv_sock)) {
             if (FD_ISSET(i, &_tmp_read_fds))
                 handle_incoming(i);
-            if (FD_ISSET(i, &_tmp_write_fds))
+            else if (FD_ISSET(i, &_tmp_write_fds))
                 send_response(i);
         }
     }
@@ -31,7 +31,7 @@ int    ConnectionManagement::loop_worker()
     for (int i = 0; i <= _max_fd; ++i) {
         if (FD_ISSET(i, &_tmp_read_fds))
             handle_incoming(i);
-        if (FD_ISSET(i, &_tmp_write_fds))
+        else if (FD_ISSET(i, &_tmp_write_fds))
             send_response(i);
     }
     return lost_connections_count;

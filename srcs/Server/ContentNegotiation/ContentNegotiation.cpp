@@ -121,7 +121,7 @@ std::string selectFile(const Http::Request& request, Http::Response& response, c
 
     int itVector = 0;
     if (languageOn && returnFile->second.tags[itVector].length() != 0)
-    response.append_header("Content-language", returnFile->second.tags[itVector++]);
+        response.append_header("Content-language", returnFile->second.tags[itVector++]);
     if (charsetOn && returnFile->second.tags[itVector].length() != 0)
         response.append_header("Content-charset", returnFile->second.tags[itVector]);
 
