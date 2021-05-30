@@ -298,19 +298,22 @@ void    Cgi::processingPostOutput(int fd, std::string& name, httpResponse& respo
     struct stat st;
     fstat(fd, &st);
     std::string body;
-    body.reserve(st.st_size);
+    body.reserve(st.st_size + 500);
 
-    char buffer[BUFSIZ];
-    int ret = 0;
-    while ((ret = read(fd, buffer, BUFSIZ)) > 0)
+    char buffer[1024];
+    int ret = 1024;
+    while (ret == 1024 && body.find("\r\n\r\n") == std::string::npos) {
+        ret = read(fd, buffer, 1024);
         body.append(buffer, ret);
-
+    }
     body = cutHeaders(body, response);
-
+    char *rbuf = new char[st.st_size];
+    ret = read(fd, rbuf, st.st_size);
+    body.append(rbuf, ret);
+    delete[] rbuf;
     close(fd);
     if (unlink(name.c_str()) < 0)
         Log::out(name, strerror(errno));
-
     response.set_body(body);
     response.set_content_length();
 

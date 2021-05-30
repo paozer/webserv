@@ -184,6 +184,14 @@ bool    parse_line_out_of_blocks(std::list<std::string> &conf, std::string &line
     return false;
 }
 
+void    remove_useless_newline(std::string &file)
+{
+    for (size_t i = 0; i < file.length() - 1; ++i) {
+        if ((file[i] == '\n') * (file[i+1] == '\n'))
+            file.erase(i + 1, 1);
+    }
+}
+
 std::vector<std::list<std::string> >    parse_file(std::string &file)
 {
     std::vector<std::list<std::string> >    res;
@@ -226,6 +234,7 @@ std::vector<std::list<std::string> >    read_file(std::string const &file)
     if (Files::fill_with_file_content(line, file))
         throw ParsingException(0, "Bad config file name.");
     Utils::undo_whitespace(line);
+    remove_useless_newline(line);
     check_blocks(line);
     return (parse_file(line));
 }
