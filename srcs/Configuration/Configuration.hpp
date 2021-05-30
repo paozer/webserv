@@ -88,9 +88,9 @@ class Configuration
         inline const std::vector<struct server>& get_servers (void) const { return _servers; }
 
     private:
+        void                            check_port(void);
         void                            set_default(std::list<std::string> &conf);
         void                            complete_config(Configuration::server &serv);
-        //void                            complete_location(Configuration::location &loc);
         void                            complete_location(Configuration::location &loc, Configuration::server &server);
         void                            load_config(std::list<std::string> &conf);
         struct location                 load_location(std::list<std::string>::iterator &it);

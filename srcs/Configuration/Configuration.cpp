@@ -11,6 +11,7 @@ void Configuration::parse(std::string const &file)
             load_config(*it);
         for (std::vector<Configuration::server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
             complete_config(*it);
+        check_port();
     } catch (Webserv::Parsing::ParsingException const &e){
         std::cerr << e.what() << std::endl;
         exit(0);
@@ -208,6 +209,16 @@ void    Configuration::set_default(std::list<std::string> &conf)
         max_workers = 5;
     if (max_connections_workers == -1)
         max_connections_workers = 200;
+}
+
+void    Configuration::check_port(void)
+{
+    if (_servers.size() < 2)
+        return ;
+    for (std::vector<struct server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
+        for (std::vector<struct server>::iterator check = it + 1; check != _servers.end(); ++check)
+            if (it->_listen.first == check->_listen.first)
+                throw ConfException("", "several server on the same port");
 }
 
 /***********************************************************************
