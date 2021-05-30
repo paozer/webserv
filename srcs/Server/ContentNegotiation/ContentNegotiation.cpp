@@ -57,10 +57,8 @@ void        checkingInFile(std::string path, const std::string &tag, const quali
 std::string selectFile(const Http::Request& request, Http::Response& response, const std::string& filepath) {
     std::string ret = filepath;
 
-    bool    languageOn;
-    bool    charsetOn;
-    request.has_header("accept-language") ? languageOn = true : languageOn = false;
-    request.has_header("accept-charset") ? charsetOn = true : charsetOn = false;
+    bool    languageOn = request.has_header("accept-language");;
+    bool    charsetOn = request.has_header("accept-charset");
 
     std::string name = ret.substr(ret.rfind("/") + 1);
     std::list<std::string> files = Files::get_directory_listing(ret.substr(0, ret.rfind("/")));
@@ -89,11 +87,10 @@ std::string selectFile(const Http::Request& request, Http::Response& response, c
     std::string tag;
     std::string path;
     for (std::list<std::string>::iterator it = files.begin(); it != files.end(); ++it) {
-        // in URI like: /directory/index, remove index to look all files in directory.
         path = ret.substr(0, ret.rfind("/") + 1);
         path += *it;
         try {
-            body = pullBody(path);
+            body = Files::get_file_content(path);
             if (languageOn) {
                 tag = getTagValue(body, "<html lang=\"");
                 checkingInFile(path, tag, langQuality, fileQuality);
@@ -112,9 +109,6 @@ std::string selectFile(const Http::Request& request, Http::Response& response, c
     // Select file with higher quality.
     filesMap::iterator returnFile = fileQuality.begin();
     for (filesMap::iterator itMap = fileQuality.begin(); itMap != fileQuality.end(); ++itMap) {
-        //std::cout << "[" << itMap->first << "|" << itMap->second.quality << "]" << std::endl;
-        //for (int i = 0; i < itMap->second.tags.size(); ++i)
-        //    std::cout << "<" << itMap->second.tags[i] << ">" << std::endl;
         if (returnFile->second.quality < itMap->second.quality)
             returnFile = itMap;
     }
@@ -124,9 +118,20 @@ std::string selectFile(const Http::Request& request, Http::Response& response, c
         response.append_header("Content-language", returnFile->second.tags[itVector++]);
     if (charsetOn && returnFile->second.tags[itVector].length() != 0)
         response.append_header("Content-charset", returnFile->second.tags[itVector]);
-
     return (returnFile->first);
 } // selectFile
+
+float   ft_atof(const std::string& input) {
+    if (input.find(".") == std::string::npos || input.substr(0, input.find(".")) == "1")
+        return (1);
+
+    std::string str_fract = input.substr(input.find(".") + 1, input.find_first_not_of("0123456789"));
+    float fract = Utils::atoi(str_fract);
+    int pow = 10;
+    for (std::size_t i = 0; i < str_fract.size(); ++i)
+        fract /= pow;
+    return (fract);
+}
 
 qualityMap& parseContentHeader(qualityMap& contentQuality, std::string header) {
     std::string key;
@@ -138,11 +143,11 @@ qualityMap& parseContentHeader(qualityMap& contentQuality, std::string header) {
         start = header.find("q=");
         end = header.find(",", start);
         if (end != std::string::npos) {
-            value = atof(header.substr(start + 2, end - start).c_str());
+            value = ft_atof(header.substr(start + 2, end - start).c_str());
             header = header.substr(end + 1);
         }
         else {
-            value = atof(header.substr(start + 2, header.length() - start).c_str());
+            value = ft_atof(header.substr(start + 2, header.length() - start).c_str());
             header.clear();
         }
         contentQuality.insert(std::pair<std::string, float>(key, value));

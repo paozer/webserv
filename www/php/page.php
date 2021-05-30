@@ -1,4 +1,3 @@
-#! /usr/bin/php-cgi
 
 <!DOCTYPE html>
 <html>
@@ -10,3 +9,4 @@ phpinfo(INFO_VARIABLES);
 ?>
 </body>
 </html>
+

@@ -62,7 +62,7 @@ void    Worker::worker_routine()
         if (_connections._max_fd)
             _connections.loop_worker();
         if (need_to_sleep)
-            usleep(1000000);
+            usleep(10000);
     }
 }
 

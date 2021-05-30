@@ -6,6 +6,7 @@
 #include "../Http/Response.hpp"
 #include "../Configuration/Configuration.hpp"
 #include "../Utils/Logger.hpp"
+#include "../Http/Authentication.hpp"
 
 #include <sys/types.h> // stat
 #include <sys/stat.h>
@@ -36,7 +37,8 @@ class Cgi {
             const Configuration::location* location,
             const Http::Request& request,
             httpResponse& response,
-            const std::string& filepath);
+            const std::string& filepath,
+            const std::string& client_address);
 
 
     private:
@@ -59,12 +61,11 @@ class Cgi {
         envMap  _envVar;
         std::string formatNameKey(const std::string& name);
         void    setEnvMap(
-                const std::string& method,
                 const confServer* server,
                 const confLocation* location,
                 const httpRequest& request,
-                httpResponse& response,
-                const std::string& filepath);
+                const std::string& filepath,
+                const std::string& client_address);
 
 
         std::string pullCode(std::string& value);
@@ -84,8 +85,6 @@ class Cgi {
                     httpResponse& response,
                     const confLocation* location,
                     const std::string& filepath);
-
-        void    pullErrorPageCgi(httpResponse& response, int code, const std::string& msg);
 
 }; // class Cgi
 }; // namespace Webserv

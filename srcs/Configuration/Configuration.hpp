@@ -43,7 +43,6 @@ class Configuration
             std::vector<struct location>    _locations;
             std::string                     auth;
             std::string                     auth_path;
-            //std::list<std::string>          auth_credentials;
         };
 
         struct location

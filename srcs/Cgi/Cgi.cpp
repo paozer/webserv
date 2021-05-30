@@ -2,12 +2,12 @@
 
 namespace Webserv {
 
-Cgi::Cgi() {};
-
 Cgi::~Cgi() {
+    if (_envVar.size() != 0) {
         for (int i = 0; _envArray[i]; ++i)
-                delete[] _envArray[i];
-        delete[] _envArray;
+            delete[] _envArray[i];
+    }
+    delete[] _envArray;
 }
 
 std::string Cgi::getScriptName(const std::string& filepath, const confLocation* location) {
@@ -42,10 +42,6 @@ std::string Cgi::getPathInfo(const std::string& filepath, const confLocation* lo
     return (ret);
 } // getPathInfo
 
-/*
-**      root location in conf should be an absolute path
-**          else there could be trouble with the use of getcwd function here
-*/
 std::string Cgi::getFullPath(const std::string& filepath, const confLocation* location) {
     std::string ret;
     // Get script name and remove the first '/'
@@ -140,95 +136,48 @@ std::string Cgi::formatNameKey(const std::string& name) {
     return (ret);
 } // formatNameKey
 
-/*
-**  When no data for meta-variables, the meta shouldn't be set to "" (unbless CGI spec specifiy it)
-**  because isset will detect it in php's script
-*/
-
 void    Cgi::setEnvMap(
-    const std::string& method,
     const confServer* server,
     const confLocation* location,
     const httpRequest& request,
-    httpResponse& response,
-    const std::string& filepath)
+    const std::string& filepath,
+    const std::string& client_address)
 {
     const Http::HeaderMap header = request.get_headers();
 
-    /*for (auto const &pair: header) {
-        std::cout << "[" << pair.first << ":" << pair.second << "]" << std::endl;
-    }
-    std::cout << std::endl;*/
-    //std::cout << "filepath: " << filepath << std::endl;
-
-    /*  AUTH_TYPE (Not empty if isn't set) To check */
-    if (request.has_header("authorization"))
-        _envVar["AUTH_TYPE"] = request.get_header_values("authorization");
-
-    /*  CONTENT_LENGTH  */
     if (request.has_header("content-length"))
         _envVar["CONTENT_LENGTH"] = request.get_header_values("content-length");
     else if (!request.get_body().empty()) {
         _envVar["CONTENT_LENGTH"] = ft_itos(request.get_body().length());
     }
 
-    /*  CONTENT_TYPE    */
     if (request.has_header("content-type"))
         _envVar["CONTENT_TYPE"] = request.get_header_values("content-type");
 
-    /*  GATEWAY_INTERFACE   */
     _envVar["GATEWAY_INTERFACE"] = "CGI/1.1";
-
     _envVar["PATH_INFO"] = request.get_uri();
-
     _envVar["PATH_TRANSLATED"] = request.get_uri();
-
-    /*  QUERY_STRING everything after '?'
-    **  contrary to what is said in the comment above the function, if there is no data,
-    **  the QUERY_STRING variable MUST be defined as an empty string "". cf. CGI/1.1 specs
-    */
     _envVar["QUERY_STRING"] = getQueryString(filepath);
+    _envVar["REMOTE_ADDR"] = client_address;
+    _envVar["REMOTE_IDENT"] = request.get_header_values("host");
 
-    /*  REMOTE_ADDR (IP address from client asking the page) */
-    // TMP -> should be connect in the future
-    _envVar["REMOTE_ADDR"] = "127.0.0.1";
+    if (request.has_header("authorization")) {
+        _envVar["AUTH_TYPE"] = "Basic";
+        std::string id = request.get_header_values("authorization");
+        id.erase(0, id.find(" ") + 1);
+        id = Http::base64_decode(id);
+        _envVar["REMOTE_USER"] = id.substr(0, id.find(":"));
+    }
 
-    /*  REMOTE_IDENT, probably false    */
-    if (request.has_header("host"))
-        _envVar["REMOTE_IDENT"] = request.get_header_values("host");
-
-    /*  REMOTE_USER (if authorization is set)   */
-    if (request.has_header("authorization"))
-        std::cout << "auth USER" << std::endl;
-
-    /*  REQUEST_METHOD  */
     _envVar["REQUEST_METHOD"] = request.get_method();
-
-    /*  REQUEST_URI */
     _envVar["REQUEST_URI"] = request.get_uri();
-
-    /*  SCRIPT_NAME */
     _envVar["SCRIPT_NAME"] = getScriptName(filepath, location);
-
-    /*  SCRIPT_FILENAME (needed to exec cgi)    */
     _envVar["SCRIPT_FILENAME"] = filepath;
-
-    /*  SERVER_NAME */
     _envVar["SERVER_NAME"] = server->_server_name;
-
-    /*  SERVER_PORT */
     _envVar["SERVER_PORT"] = ft_itos(server->_listen.first);
-
-    /*  SERVER_PROTOCOL */
     _envVar["SERVER_PROTOCOL"] = "HTTP/1.1";
-
-    /*  SERVER_SOFTWARE */
     _envVar["SERVER_SOFTWARE"] = "Webserv/1.1";
-
-    /*  REDIRECT_STATUS (Needed to tell cgi that everything was handled good by the server) */
     _envVar["REDIRECT_STATUS"] = "200";
-
-    /*  SERVER_ADDR */
     _envVar["SERVER_ADDR"] = server->_listen.second;
 
     // Add all custom headers (starts with "X-")
@@ -261,6 +210,8 @@ std::string Cgi::cutHeaders(const std::string& body, httpResponse& response) {
     std::string name;
     std::string value;
 
+    if (body.find("\r\n\r\n") == std::string::npos)
+        return (body);
     while (body.find("\r\n\r\n") > start) {
         for (int i = start; body[i] != ':'; i++)
                 name += body[i];
@@ -328,11 +279,11 @@ void    Cgi::methodPost(
     int tmpFd;
     std::string name = generateRandomName();
     if ((tmpFd = open(name.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0)
-        std::cout << "ERROR FILE" << std::endl;
+        Log::out(location->_cgi_path[0], strerror(errno));
 
     int pipeInput[2];
     if (pipe(pipeInput) < 0)
-        std::cout << "pipe: " << strerror(errno) << std::endl;
+        Log::out(location->_cgi_path[0], strerror(errno));
 
 
     int pid = fork();
@@ -372,7 +323,7 @@ void    Cgi::methodGet(
 
     int pipeFd[2];
     if (pipe(pipeFd) < 0)
-        std::cout << "pipe: " << strerror(errno) << std::endl;
+        Log::out(location->_cgi_path[0], strerror(errno));
 
     int pid = fork();
     if (pid == 0) {
@@ -391,6 +342,7 @@ void    Cgi::methodGet(
     }
 
     close(pipeFd[1]);
+    waitpid(-1, NULL, 0);
 
     char buffer[BUFSIZ];
     std::string body;
@@ -413,13 +365,16 @@ Cgi::Cgi(
     const Configuration::location* location,
     const Http::Request& request,
     httpResponse& response,
-    const std::string& filepath)
+    const std::string& filepath,
+    const std::string& client_address)
 {
+    _envArray = NULL;
+    
     struct stat st;
     if (stat(location->_cgi_path[0].c_str(), &st) < 0)
-        pullErrorPageCgi(response, 502, "Bad Gateway");
-    if (st.st_mode & S_IXUSR) {
-        setEnvMap(method, server, location, request, response, filepath);
+        response.fill_with_error("502", server);
+    else if (st.st_mode & S_IXUSR) {
+        setEnvMap(server, location, request, filepath, client_address);
         setEnvArray();
 
         if (method == "GET")
@@ -427,24 +382,8 @@ Cgi::Cgi(
         else if (method == "POST")
             methodPost(response, request, location, filepath);
     }
-    else // Cgi isn't an exec
-        pullErrorPageCgi(response, 502, "Bad Gateway");
-} // Cgi
-
-void    Cgi::pullErrorPageCgi(httpResponse& response, int code, const std::string& msg) {
-    std::string ret;
-
-    ret = "<!DOCTYPE html>\n";
-    ret += "<html>\n";
-    ret += "<body>\n";
-    ret +=  "<h1>" + ft_itos(code) + ": " + msg + "</h1>\n";
-    ret += "</body>\n";
-    ret += "</html>\n";
-
-    response.set_status_code(ft_itos(code));
-    response.set_body(ret);
-    response.set_content_length();
-    response.append_header("content_type", "text/html");
+    else
+        response.fill_with_error("502", server);
 } // Cgi
 
 }; // namespace Webserv

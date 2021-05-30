@@ -7,7 +7,7 @@
 
 #include <stdio.h> // BUFSIZ
 #include <errno.h>
-#include <string.h> // strerror, atof
+#include <string.h> // strerror
 #include <map>
 #include <vector>
 

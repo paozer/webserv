@@ -8,13 +8,13 @@ namespace Methods {
 //AUTHORIZATION used in authentication
 //ALLOW used in OPTIONS and 405 error
 //CONTENT-LENGTH used for all responses
-//CONTENT-TYPE used in GET/POST TODO POST
-//CONTENT-LANGUAGE used when returned ressource was content negotiated // TODO
-//CONTENT-LOCATION used when returned ressource was content negotiated // TODO
+//CONTENT-TYPE used in GET/POST
+//CONTENT-LANGUAGE used when returned ressource was content negotiated
+//CONTENT-LOCATION used when returned ressource was content negotiated
 //HOST used in request routing
 //TRANSFER-ENCODING used when receiving/sending chunked body
-//LAST-MODIFIED used in GET/PUT when a ressource was created TODO POST
-//LOCATION used in PUT/POST when a ressource was created TODO POST
+//LAST-MODIFIED used in GET/PUT when a ressource was created
+//LOCATION used in PUT/POST when a ressource was created
 //REFERER this is not useful
 //RETRY-AFTER used when bouncing clients
 //USER-AGENT this is not useful
@@ -59,7 +59,7 @@ Http::Response method_handler (const Http::Request& request, const Configuration
     } else if (method == "HEAD") {
         get(request, response, filepath, location, server);
     } else if (method == "POST") {
-        post(request, response, filepath, location, server);
+        post(request, response, filepath, location, server, Utils::itoa(htons(s.sin_port)));
     } else if (method == "PUT") {
         put(request, response, filepath, location, server);
     } else if (method == "DELETE") {
@@ -85,8 +85,10 @@ void get (const Http::Request& request, Http::Response& response, const std::str
                     std::string s;
                     if (Files::fill_with_file_content(s, filepath + "/" + location->_index) == -1)
                         response.fill_with_error("404", server);
-                    else
+                    else {
                         response.set_body(s);
+                        response.append_header("Content-Type", get_media_type(filepath + "/" + location->_index));
+                    }
                 } else if (location->_autoindex) {
                     response.set_body(Files::get_http_directory_listing(filepath));
                     response.append_header("Content-Type", "text/html");
@@ -94,8 +96,15 @@ void get (const Http::Request& request, Http::Response& response, const std::str
                     response.fill_with_error("403", server);
                 }
             } else {
-                if (request.has_header("accept-language") || request.has_header("accept-charset"))
-                    const_cast<std::string&>(filepath) = ContentNegotiation::selectFile(request, response, filepath);
+                if (request.has_header("accept-language") || request.has_header("accept-charset")) {
+                    std::string negotiated_filepath = ContentNegotiation::selectFile(request, response, filepath);
+                    if (negotiated_filepath != filepath) {
+                        const_cast<std::string&>(filepath) = negotiated_filepath;
+                        std::string content_location = location->_name;
+                        content_location += negotiated_filepath.substr(content_location.find(location->_root) + location->_root.length() + 1);
+                        response.append_header("Content-Location", content_location);
+                    }
+                }
                 std::string s;
                 if (Files::fill_with_file_content(s, filepath) == -1) {
                     response.fill_with_error("403", server);
@@ -144,10 +153,10 @@ void put (const Http::Request& request, Http::Response& response, const std::str
     close(fd);
 }
 
-void post (const Http::Request& request, Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server)
+void post (const Http::Request& request, Http::Response& response, const std::string& filepath, const Configuration::location* location, const Configuration::server* server, const std::string& client_address)
 {
     if (request.get_uri().rfind(location->_cgi_extension) == request.get_uri().length() - location->_cgi_extension.length()) {
-        Cgi cgi("POST", server, location, request, response, filepath);
+        Cgi cgi("POST", server, location, request, response, filepath, client_address);
     } else if (!request.has_header("Content-Range")) {
         response.set_body("");
         response.set_status_code("204");

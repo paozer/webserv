@@ -216,9 +216,12 @@ void    Configuration::check_port(void)
     if (_servers.size() < 2)
         return ;
     for (std::vector<struct server>::iterator it = _servers.begin(); it != _servers.end(); ++it)
-        for (std::vector<struct server>::iterator check = it + 1; check != _servers.end(); ++check)
+        for (std::vector<struct server>::iterator check = it + 1; check != _servers.end(); ++check) {
             if (it->_listen.first == check->_listen.first)
                 throw ConfException("", "several server on the same port");
+            if (it->_server_name == check->_server_name)
+                throw ConfException("", "several server with the same name");
+        }
 }
 
 /***********************************************************************
